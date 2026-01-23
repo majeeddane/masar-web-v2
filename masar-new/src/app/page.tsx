@@ -53,11 +53,13 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full sm:w-auto">
-            <button className="w-full sm:w-auto px-8 py-4 bg-teal-500 hover:bg-teal-400 text-white rounded-full font-bold text-lg transition-all shadow-[0_0_40px_-10px_rgba(45,212,191,0.5)] hover:shadow-[0_0_60px_-15px_rgba(45,212,191,0.6)] hover:scale-105 flex items-center justify-center gap-2 group">
+            <Link
+              href="/login"
+              className="w-full sm:w-auto px-8 py-4 bg-teal-500 hover:bg-teal-400 text-white rounded-full font-bold text-lg transition-all shadow-[0_0_40px_-10px_rgba(45,212,191,0.5)] hover:shadow-[0_0_60px_-15px_rgba(45,212,191,0.6)] hover:scale-105 flex items-center justify-center gap-2 group"
+            >
               <span>ابدأ الآن</span>
-              {/* ArrowLeft is correct for 'Next' in RTL usually, or we verify strictly. Let's use generic direction. */}
               <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-            </button>
+            </Link>
             <button className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 backdrop-blur-md rounded-full font-bold text-lg transition-all hover:scale-105 flex items-center justify-center gap-2">
               <span>تعرف علينا</span>
               <ChevronDown className="w-5 h-5 opacity-60" />
