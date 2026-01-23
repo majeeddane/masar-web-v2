@@ -139,7 +139,7 @@ export default function LoginPage() {
 
                     <div className="p-6 bg-slate-50 border-t border-slate-100 text-center text-sm text-slate-600">
                         ليس لديك حساب؟{' '}
-                        <Link href="/register" className="text-blue-600 hover:text-blue-700 font-bold">
+                        <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-bold">
                             أنشئ حساباً جديداً
                         </Link>
                     </div>
