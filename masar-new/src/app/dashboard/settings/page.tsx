@@ -82,7 +82,8 @@ export default function SettingsPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const filePath = `${user.id}/${Math.random()}.${fileExt}`;
+        // Sanitize filename: avatar_TIMESTAMP.ext to avoid Arabic/special char issues
+        const filePath = `${user.id}/avatar_${Date.now()}.${fileExt}`;
 
         try {
             // 1. Upload file to Supabase Storage
@@ -108,8 +109,10 @@ export default function SettingsPage() {
             setAvatarUrl(publicUrl);
             setMessage({ type: 'success', text: 'تم تحديث الصورة الشخصية بنجاح!' });
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error uploading avatar:', error);
+            // Show real error to user as requested
+            alert("Upload Error: " + (error.message || "Unknown error"));
             setMessage({ type: 'error', text: 'حدث خطأ أثناء رفع الصورة.' });
         } finally {
             setUploading(false);
