@@ -1,19 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Camera, Save, Lock, Bell, User, Mail, Smartphone, Briefcase, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Camera, Save, Lock, Bell, User, Mail, Smartphone, Briefcase, Shield, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function SettingsPage() {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
+    const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form State
     const [fullName, setFullName] = useState('');
     const [jobTitle, setJobTitle] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
     // Fetch User Data
     useEffect(() => {
@@ -26,6 +29,7 @@ export default function SettingsPage() {
                 setFullName(user.user_metadata?.full_name || '');
                 setJobTitle(user.user_metadata?.job_title || '');
                 setPhone(user.user_metadata?.phone || '');
+                setAvatarUrl(user.user_metadata?.avatar_url || null);
             }
             if (error) {
                 console.error('Error fetching user:', error);
@@ -36,7 +40,6 @@ export default function SettingsPage() {
         fetchUserData();
     }, []);
 
-    // Handle Profile Update
     // Handle Profile Update
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,7 +52,9 @@ export default function SettingsPage() {
             data: {
                 full_name: fullName,
                 job_title: jobTitle,
-                phone: phone
+                phone: phone,
+                // avatar_url is updated separately immediately after upload, but good to ensure consistency if needed.
+                // However, we rely on the specific upload handler for that.
             }
         });
 
@@ -60,6 +65,55 @@ export default function SettingsPage() {
             setMessage({ type: 'success', text: 'تم حفظ التغييرات بنجاح!' });
         }
         setLoading(false);
+    };
+
+    // Handle Avatar Upload
+    const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files || event.target.files.length === 0) {
+            return;
+        }
+
+        setUploading(true);
+        setMessage(null);
+        const file = event.target.files[0];
+        const fileExt = file.name.split('.').pop();
+
+        // Get current user ID
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const filePath = `${user.id}/${Math.random()}.${fileExt}`;
+
+        try {
+            // 1. Upload file to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            // 3. Update User Metadata
+            const { error: updateError } = await supabase.auth.updateUser({
+                data: { avatar_url: publicUrl }
+            });
+
+            if (updateError) throw updateError;
+
+            // 4. Update UI
+            setAvatarUrl(publicUrl);
+            setMessage({ type: 'success', text: 'تم تحديث الصورة الشخصية بنجاح!' });
+
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            setMessage({ type: 'error', text: 'حدث خطأ أثناء رفع الصورة.' });
+        } finally {
+            setUploading(false);
+        }
     };
 
     if (fetching) {
@@ -91,11 +145,34 @@ export default function SettingsPage() {
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 flex flex-col items-center text-center">
                         <div className="relative mb-6 group">
-                            <div className="w-32 h-32 rounded-full bg-slate-100 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
-                                <User size={64} className="text-slate-300" />
-                                {/* Placeholder for actual image */}
+                            <div className="w-32 h-32 rounded-full bg-slate-100 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center relative">
+                                {uploading ? (
+                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10">
+                                        <Loader2 className="animate-spin text-white" size={32} />
+                                    </div>
+                                ) : null}
+
+                                {avatarUrl ? (
+                                    <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <User size={64} className="text-slate-300" />
+                                )}
                             </div>
-                            <button className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full shadow-md hover:bg-blue-700 transition-colors" title="تغيير الصورة">
+
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleAvatarUpload}
+                            />
+
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploading}
+                                className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full shadow-md hover:bg-blue-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                                title="تغيير الصورة"
+                            >
                                 <Camera size={18} />
                             </button>
                         </div>
