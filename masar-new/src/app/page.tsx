@@ -172,7 +172,7 @@ export default function LandingPage() {
               <Link href="#" className="hover:text-blue-600 transition-colors">المدونة</Link>
               <Link href="#" className="hover:text-blue-600 transition-colors">سياسة الخصوصية</Link>
             </div>
-
+// Update for Vercel Keys
             <p className="text-slate-400 text-sm">
               © {new Date().getFullYear()} مسار. جميع الحقوق محفوظة.
             </p>
