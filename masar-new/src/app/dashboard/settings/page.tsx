@@ -37,11 +37,14 @@ export default function SettingsPage() {
     }, []);
 
     // Handle Profile Update
+    // Handle Profile Update
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setMessage(null);
 
+        // ONLY update user metadata (data object). 
+        // We do NOT include 'email' or 'phone' at the root level to avoid triggering auth verification flows.
         const { error } = await supabase.auth.updateUser({
             data: {
                 full_name: fullName,
@@ -51,6 +54,7 @@ export default function SettingsPage() {
         });
 
         if (error) {
+            console.error('Supabase Update Error:', error);
             setMessage({ type: 'error', text: 'حدث خطأ أثناء حفظ التغييرات. يرجى المحاولة مرة أخرى.' });
         } else {
             setMessage({ type: 'success', text: 'تم حفظ التغييرات بنجاح!' });
