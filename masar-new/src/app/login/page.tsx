@@ -32,7 +32,15 @@ export default function LoginPage() {
             // Redirect to dashboard or home on success
             router.push('/dashboard');
         } catch (err: any) {
-            setError(err.message || 'حدث خطأ أثناء تسجيل الدخول');
+            let errorMessage = err.message || 'حدث خطأ أثناء تسجيل الدخول';
+
+            if (errorMessage.includes('Email not confirmed')) {
+                errorMessage = 'يرجى تأكيد بريدك الإلكتروني. تفقد صندوق الوارد (أو البريد العشوائي) لتفعيل حسابك.';
+            } else if (errorMessage.includes('Invalid login credentials')) {
+                errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+            }
+
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
