@@ -1,8 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
-// HARDCODED CREDENTIALS AS REQUESTED
-// TODO: Revert to using environment variables properly in production
-const supabaseUrl = 'https://avbvwmsjmsyamkuixitt.supabase.co'
-const supabaseKey = 'eyJhbgCiOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2YnZ3bXNqbXN5YW1rdWl4aXR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc2NDY4NjUsImV4cCI6MjA1MzIyMjg2NX0.gb6SzKukNNOeSBzmiCHLxPw9P450vhYhw5klkxX_bEY'
-
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export function createClient() {
+    // وضعنا الرابط والمفتاح مباشرة هنا لنتأكد 100%
+    return createBrowserClient(
+        'https://tluirjbfamklzjugtnek.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsdWlyamJmYW1rbHpqdWd0bmVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxODc5ODIsImV4cCI6MjA4NDc2Mzk4Mn0.GeAwox6wsq8MQBL7fvO5WUZPQiEO25QfeZ_sBc13yaU'
+    )
+}
