@@ -86,14 +86,14 @@ export default function SettingsPage() {
         const filePath = `${user.id}/avatar_${Date.now()}.${fileExt}`;
 
         try {
-            // 1. Upload file to Supabase Storage
+            // 1. Upload file to Supabase Storage - Strictly hardcoded 'avatars' bucket
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
 
-            // 2. Get Public URL
+            // 2. Get Public URL - Strictly hardcoded 'avatars' bucket
             const { data: { publicUrl } } = supabase.storage
                 .from('avatars')
                 .getPublicUrl(filePath);
