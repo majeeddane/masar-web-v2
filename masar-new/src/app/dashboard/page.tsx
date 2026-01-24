@@ -72,6 +72,7 @@ export default function DashboardOverview() {
                         </div>
                         <span className="text-green-600 text-xs font-bold">+24%</span>
                     </div>
+                    // fix supabase keys
                     <h3 className="text-lg font-bold text-slate-800 mb-1">مشاهدات الملف</h3>
                     <p className="text-sm text-slate-500">في آخر 30 يوم</p>
                 </div>
