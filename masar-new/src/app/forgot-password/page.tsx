@@ -17,9 +17,16 @@ export default function ForgotPasswordPage() {
         setError(null);
         setSuccess(false);
 
+        // Allow overriding via env var (standard Vercel practice), otherwise fallback to origin
+        // The user specifically requested ensuring it points to their production URL when needed.
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+        const redirectUrl = `${siteUrl}/auth/callback?next=/update-password`;
+
+        console.log('Sending reset to:', redirectUrl); // Debug log
+
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
+                redirectTo: redirectUrl,
             });
 
             if (error) throw error;
@@ -27,7 +34,8 @@ export default function ForgotPasswordPage() {
             setSuccess(true);
         } catch (err: any) {
             console.error('Reset Password Error:', err);
-            setError('حدث خطأ أثناء إرسال الرابط. يرجى التأكد من البريد الإلكتروني والمحاولة مرة أخرى.');
+            // Show exact error as requested for debugging
+            setError(err.message || 'حدث خطأ أثناء إرسال الرابط.');
         } finally {
             setLoading(false);
         }
