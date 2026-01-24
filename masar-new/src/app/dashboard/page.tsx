@@ -1,13 +1,34 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Activity, Eye, FileText } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function DashboardOverview() {
+    // متغير لتخزين اسم المستخدم
+    const [userName, setUserName] = useState('...');
+
+    // دالة لجلب بيانات المستخدم عند فتح الصفحة
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                // محاولة أخذ الاسم من البيانات، أو أخذ الجزء الأول من الإيميل
+                const nameFromEmail = user.email?.split('@')[0];
+                setUserName(user.user_metadata?.full_name || nameFromEmail || 'زائر');
+            }
+        };
+        getUser();
+    }, []);
+
     return (
         <div className="space-y-8 animate-fade-in-up">
             {/* Welcome Section */}
             <div className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-64 h-64 bg-teal-500/20 rounded-full blur-3xl -translate-x-12 -translate-y-12" />
                 <div className="relative z-10">
-                    <h1 className="text-3xl font-bold mb-2">مرحباً بك، محمد 👋</h1>
+                    {/* هنا يعرض الاسم الحقيقي */}
+                    <h1 className="text-3xl font-bold mb-2">مرحباً بك، {userName} 👋</h1>
                     <p className="text-blue-100 max-w-xl">
                         لوحة التحكم الخاصة بك جاهزة. أكمل ملفك الشخصي لزيادة فرصك في الحصول على الوظيفة المناسبة.
                     </p>
