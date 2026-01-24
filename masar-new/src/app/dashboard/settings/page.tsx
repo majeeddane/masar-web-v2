@@ -69,6 +69,8 @@ export default function SettingsPage() {
 
     // Handle Avatar Upload
     const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        alert("Debug: Start Upload"); // Alert 1
+
         if (!event.target.files || event.target.files.length === 0) {
             return;
         }
@@ -80,18 +82,27 @@ export default function SettingsPage() {
 
         // Get current user ID
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+            alert("Debug: No user logged in");
+            setUploading(false);
+            return;
+        }
+        alert("Debug: User Found: " + user.id); // Alert 2
 
         // Sanitize filename: avatar_TIMESTAMP.ext to avoid Arabic/special char issues
         const filePath = `${user.id}/avatar_${Date.now()}.${fileExt}`;
 
         try {
+            alert("Debug: Preparing to upload to 'avatars'..."); // Alert 3
+
             // 1. Upload file to Supabase Storage - Strictly hardcoded 'avatars' bucket
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
+
+            alert("Debug: Upload Success!"); // Alert 4
 
             // 2. Get Public URL - Strictly hardcoded 'avatars' bucket
             const { data: { publicUrl } } = supabase.storage
@@ -112,7 +123,7 @@ export default function SettingsPage() {
         } catch (error: any) {
             console.error('Error uploading avatar:', error);
             // Show real error to user as requested
-            alert("Upload Error: " + (error.message || "Unknown error"));
+            alert("Debug Error: " + (error.message || "Unknown error"));
             setMessage({ type: 'error', text: 'حدث خطأ أثناء رفع الصورة.' });
         } finally {
             setUploading(false);
