@@ -76,8 +76,23 @@ export default function LoginPage() {
                             <p className="text-slate-500">مرحباً بك مجدداً في مسار</p>
                         </div>
 
+                        <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+                            <button
+                                onClick={() => setError(null)}
+                                className="flex-1 py-2 rounded-lg text-sm font-bold bg-white text-blue-900 shadow-sm"
+                            >
+                                البريد الإلكتروني
+                            </button>
+                            <button
+                                onClick={() => setError('تسجيل الدخول برقم الهاتف غير مفعل حالياً. يرجى استخدام البريد الإلكتروني.')}
+                                className="flex-1 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700"
+                            >
+                                رقم الجوال
+                            </button>
+                        </div>
+
                         {error && (
-                            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 text-center border border-red-100">
+                            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 text-center border border-red-100 animate-fade-in">
                                 {error}
                             </div>
                         )}
@@ -90,8 +105,8 @@ export default function LoginPage() {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    placeholder="nom@example.com"
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-left"
+                                    placeholder="name@example.com"
                                     dir="ltr"
                                 />
                             </div>
@@ -104,7 +119,7 @@ export default function LoginPage() {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-left"
                                         placeholder="••••••••"
                                         dir="ltr"
                                     />

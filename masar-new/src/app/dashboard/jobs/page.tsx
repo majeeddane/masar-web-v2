@@ -93,7 +93,8 @@ export default function JobMatchesPage() {
             const query = searchQuery.toLowerCase();
             result = result.filter(job =>
                 job.title.toLowerCase().includes(query) ||
-                job.company.toLowerCase().includes(query)
+                job.company.toLowerCase().includes(query) ||
+                job.location.toLowerCase().includes(query)
             );
         }
 

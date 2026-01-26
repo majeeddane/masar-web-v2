@@ -95,8 +95,56 @@ export default function LandingPage() {
         </div>
       </header>
 
+      {/* Dual Path Section (New Pillar 3 Requirement) */}
+      <section className="py-20 -mt-20 relative z-20 container mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+          {/* Path 1: Companies */}
+          <div className="bg-blue-900 rounded-3xl p-10 text-white relative overflow-hidden group hover:-translate-y-2 transition-transform duration-300 shadow-2xl">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-10 translate-x-10 group-hover:bg-white/10 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm border border-white/10">
+                <Briefcase className="w-8 h-8 text-blue-200" />
+              </div>
+              <h2 className="text-3xl font-bold mb-4">أصحاب العمل والشركات</h2>
+              <p className="text-blue-100 mb-8 text-lg leading-relaxed">
+                هل تبحث عن أفضل المواهب؟ انشر وظائفك مجاناً واصل إلى آلاف المرشحين المؤهلين فوراً.
+              </p>
+              <Link href="/post/job" className="inline-flex items-center gap-3 bg-white text-blue-900 px-6 py-3.5 rounded-xl font-bold hover:bg-blue-50 transition-colors">
+                <span>انشر وظيفة مجاناً</span>
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Path 2: Job Seekers */}
+          <div className="bg-white rounded-3xl p-10 border border-slate-200 relative overflow-hidden group hover:-translate-y-2 transition-transform duration-300 shadow-xl">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-50 rounded-full blur-3xl -translate-y-10 translate-x-10 group-hover:bg-teal-100 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="w-16 h-16 bg-teal-50 rounded-2xl flex items-center justify-center mb-6 border border-teal-100">
+                <User className="w-8 h-8 text-teal-600" />
+              </div>
+              <h2 className="text-3xl font-bold text-slate-800 mb-4">الباحثين عن عمل</h2>
+              <p className="text-slate-500 mb-8 text-lg leading-relaxed">
+                ابنِ سيرتك الذاتية باحترافية، تصفح آلاف الوظائف اليومية، وانطلق في مسارك المهني.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Link href="/dashboard/cv" className="inline-flex items-center gap-2 bg-teal-600 text-white px-6 py-3.5 rounded-xl font-bold hover:bg-teal-700 transition-colors shadow-lg shadow-teal-600/20">
+                  <span>إنشاء سيرة ذاتية</span>
+                  <FileText className="w-5 h-5" />
+                </Link>
+                <Link href="/dashboard/jobs" className="inline-flex items-center gap-2 bg-slate-100 text-slate-600 px-6 py-3.5 rounded-xl font-bold hover:bg-slate-200 transition-colors">
+                  <span>تصفح الوظائف</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* Features Section */}
-      <section id="features" className="py-24 bg-white relative">
+      <section id="features" className="py-24 bg-white relative border-t border-slate-100">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16 max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-blue-950 mb-4">كل ما تحتاجه لنجاحك المهني</h2>
@@ -167,12 +215,13 @@ export default function LandingPage() {
             </div>
 
             <div className="flex items-center gap-6 text-slate-500 text-sm font-medium">
-              <Link href="#" className="hover:text-blue-600 transition-colors">عن مسار</Link>
-              <Link href="#" className="hover:text-blue-600 transition-colors">الوظائف</Link>
-              <Link href="#" className="hover:text-blue-600 transition-colors">المدونة</Link>
-              <Link href="#" className="hover:text-blue-600 transition-colors">سياسة الخصوصية</Link>
+              <Link href="/about" className="hover:text-blue-600 transition-colors">عن مسار</Link>
+              <Link href="/dashboard/jobs" className="hover:text-blue-600 transition-colors">الوظائف</Link>
+              <Link href="/blog" className="hover:text-blue-600 transition-colors">المدونة</Link>
+              <Link href="/privacy" className="hover:text-blue-600 transition-colors">سياسة الخصوصية</Link>
+              <Link href="/terms" className="hover:text-blue-600 transition-colors">الشروط والأحكام</Link>
             </div>
-// Update for Vercel Keys - Removed
+
             <p className="text-slate-400 text-sm">
               © {new Date().getFullYear()} مسار. جميع الحقوق محفوظة.
             </p>
