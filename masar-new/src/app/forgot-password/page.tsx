@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://masar-web-v2.vercel.app';
         const redirectUrl = `${siteUrl}/auth/callback?next=/update-password`;
 
-        console.log('Sending reset to:', redirectUrl); // Debug log
+
 
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
