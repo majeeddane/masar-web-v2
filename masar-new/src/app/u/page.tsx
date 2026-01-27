@@ -24,6 +24,26 @@ export default function UserHub() {
         checkUser();
     }, [router]);
 
+    const [fetching, setFetching] = useState(false);
+
+    const handleFetchJobs = async () => {
+        setFetching(true);
+        try {
+            const res = await fetch('/api/admin/scrape', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message); // Simple alert for now, or use a toast if available
+            } else {
+                alert('Scraping failed');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error fetching jobs');
+        } finally {
+            setFetching(false);
+        }
+    };
+
     if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
 
     const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'المستخدم';
@@ -38,6 +58,10 @@ export default function UserHub() {
                     <span>مسار</span>
                 </Link>
                 <div className="flex items-center gap-4">
+                    <button onClick={handleFetchJobs} disabled={fetching} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+                        {fetching ? <Loader2 className="w-4 h-4 animate-spin" /> : '🚀'}
+                        {fetching ? 'جاري البحث...' : 'Fetch Jobs Now'}
+                    </button>
                     <button className="p-2 text-slate-400 hover:bg-slate-50 rounded-full"><Bell className="w-5 h-5" /></button>
                     <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
                         {userName.charAt(0).toUpperCase()}
