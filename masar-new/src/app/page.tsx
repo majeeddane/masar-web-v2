@@ -1,129 +1,108 @@
 import Link from 'next/link';
-import { Briefcase, Search, MapPin, LogIn, LayoutDashboard } from 'lucide-react';
+import { Briefcase, User, Search, MapPin, Menu, X, CheckCircle, Building2, Globe, LogIn, LayoutDashboard } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 
-export const dynamic = 'force-dynamic';
-
 export default async function LandingPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // BYPASS: No auth check needed, we just show dashboard links
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-slate-900" dir="rtl">
+    <div className="min-h-screen bg-white font-sans text-slate-900" dir="rtl">
 
       {/* Navbar */}
-      <nav className="fixed w-full z-50 bg-white border-b border-gray-100 shadow-sm transition-all h-20 flex items-center">
+      <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all h-20 flex items-center">
         <div className="container mx-auto px-6 flex items-center justify-between">
 
-          {/* Logo & Navigation */}
-          <div className="flex items-center gap-10">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center text-white shadow-lg group-hover:bg-blue-800 transition-colors">
+          {/* Logo & Main Links */}
+          <div className="flex items-center gap-12">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-10 h-10 bg-blue-700 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:bg-blue-800 transition-colors">
                 <Briefcase className="w-6 h-6 stroke-[2.5]" />
               </div>
-              <span className="text-3xl font-black text-blue-900 tracking-tight">مسار</span>
+              <span className="text-3xl font-black text-blue-950 tracking-tighter">مسار</span>
             </Link>
 
-            <div className="hidden lg:flex items-center gap-8 font-bold text-gray-600">
+            <div className="hidden lg:flex items-center gap-8 text-[15px] font-bold text-gray-600">
               <Link href="/" className="text-blue-700">الرئيسية</Link>
-              <Link href="/jobs" className="hover:text-blue-700 transition-colors">تصفح الوظائف</Link>
-              <Link href="/companies" className="hover:text-blue-700 transition-colors">دليل الشركات</Link>
+              <Link href="/dashboard" className="hover:text-blue-700 transition-colors">الوظائف</Link>
+              <Link href="/companies" className="hover:text-blue-700 transition-colors">الدليل</Link>
               <Link href="/blog" className="hover:text-blue-700 transition-colors">المقالات</Link>
             </div>
           </div>
 
-          {/* Auth Actions */}
+          {/* Auth Actions - BYPASS MODE */}
           <div className="flex items-center gap-4">
-            {user ? (
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white px-5 py-2.5 rounded-lg font-bold shadow-md transition-all"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                لوحة التحكم
-              </Link>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/login"
-                  className="hidden md:flex items-center gap-2 text-gray-600 font-bold hover:text-blue-700 px-4 py-2"
-                >
-                  <LogIn className="w-4 h-4" />
-                  تسجيل الدخول
-                </Link>
-                <Link
-                  href="/register"
-                  className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:shadow-lg transition-all"
-                >
-                  حساب جديد
-                </Link>
-              </div>
-            )}
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white px-5 py-2.5 rounded-lg font-bold shadow-md transition-all"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              لوحة التحكم (مباشر)
+            </Link>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <header className="relative pt-32 pb-48 lg:min-h-[600px] flex items-center bg-blue-900 border-b-8 border-blue-500 overflow-hidden">
-        {/* Background Image with Overlay */}
+      <header className="relative pt-32 pb-40 lg:min-h-[700px] flex items-center justify-center bg-gray-900 overflow-hidden">
+        {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img
             src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1600&auto=format&fit=crop"
             alt="Office Background"
-            className="w-full h-full object-cover opacity-40 mix-blend-overlay"
+            className="w-full h-full object-cover opacity-40 md:opacity-100"
           />
-          <div className="absolute inset-0 bg-blue-900/80 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-t from-blue-900 via-transparent to-transparent" />
+          {/* Dark Blue Overlay */}
+          <div className="absolute inset-0 bg-blue-950/85 md:bg-blue-900/80 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
         </div>
 
         <div className="container mx-auto px-6 relative z-10 text-center md:text-right">
           <div className="max-w-3xl mr-auto md:mr-0">
-            <h1 className="text-4xl md:text-6xl font-black text-white mb-6 leading-tight drop-shadow-sm">
-              وظّف أفضل الخبرات <br />
-              <span className="text-blue-300">من أي مكان</span>
+            <h1 className="text-4xl md:text-7xl font-black text-white mb-6 leading-tight tracking-tight drop-shadow-md">
+              <span className="block mb-2">وظّف أفضل الخبرات</span>
+              <span className="text-blue-400">من أي مكان</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-blue-100 mb-10 leading-relaxed font-medium max-w-2xl opacity-90">
+            <p className="text-blue-100 text-lg md:text-2xl mb-10 leading-relaxed font-medium md:max-w-2xl opacity-90">
               أعلن عن وظائفك الشاغرة ووظف أفضل الكفاءات والمهارات التي تحتاجها للعمل في شركتك مجاناً دون التقيد بمنطقة جغرافية محددة.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/post/job"
-                className="inline-flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white text-lg font-bold px-8 py-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-1"
-              >
-                <Briefcase className="w-5 h-5" />
-                أضف وظيفة مجاناً
-              </Link>
-            </div>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-3 bg-blue-600 hover:bg-blue-500 text-white text-lg font-bold px-10 py-5 rounded-xl shadow-2xl hover:shadow-blue-500/30 transition-all transform hover:-translate-y-1"
+            >
+              <Briefcase className="w-6 h-6" />
+              <span>أضف وظيفة مجاناً</span>
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Floating Search Bar */}
-      <div className="relative -mt-24 z-20 container mx-auto px-6 mb-20">
-        <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 max-w-5xl mx-auto">
-          <form className="flex flex-col md:flex-row items-center gap-4">
+      {/* Advanced Search Bar (Floating) */}
+      <div className="relative -mt-20 z-20 container mx-auto px-6">
+        <div className="bg-slate-900 p-4 md:p-6 rounded-2xl shadow-2xl border-t-4 border-blue-500 max-w-5xl mx-auto">
+          <form className="flex flex-col md:flex-row gap-4">
 
-            {/* Input: Job Title */}
-            <div className="w-full relative group">
-              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                <Search className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            {/* Input 1: Job Title */}
+            <div className="flex-1 relative group">
+              <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                <Search className="w-5 h-5" />
               </div>
               <input
                 type="text"
-                placeholder="المسمى الوظيفي..."
-                className="w-full h-14 pr-12 pl-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-blue-500 hover:bg-white hover:border-gray-200 rounded-xl outline-none transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                placeholder="المسمى الوظيفي، المهارات..."
+                className="w-full h-14 pl-4 pr-12 rounded-xl border-2 border-slate-700 bg-slate-800 text-white placeholder-slate-400 focus:border-blue-500 focus:bg-slate-900 outline-none transition-all font-medium"
               />
             </div>
 
-            {/* Select: City */}
-            <div className="w-full md:w-1/3 relative group">
-              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                <MapPin className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            {/* Input 2: City/Country */}
+            <div className="flex-1 md:max-w-xs relative group">
+              <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                <MapPin className="w-5 h-5" />
               </div>
-              <select className="w-full h-14 pr-12 pl-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-blue-500 hover:bg-white hover:border-gray-200 rounded-xl outline-none transition-all font-medium text-gray-900 cursor-pointer appearance-none">
-                <option value="">كل المدن</option>
+              <select className="w-full h-14 pl-4 pr-12 rounded-xl border-2 border-slate-700 bg-slate-800 text-white placeholder-slate-400 focus:border-blue-500 focus:bg-slate-900 outline-none transition-all font-medium appearance-none cursor-pointer">
+                <option value="">اختار المدينة...</option>
+                <option value="all">كل المدن</option>
                 <option value="riyadh">الرياض</option>
                 <option value="jeddah">جدة</option>
                 <option value="dammam">الدمام</option>
@@ -131,15 +110,40 @@ export default async function LandingPage() {
             </div>
 
             {/* Submit Button */}
-            <button className="w-full md:w-auto px-10 h-14 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+            <Link href="/dashboard" className="h-14 md:w-48 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-lg shadow-lg transition-all flex items-center justify-center">
               بحث
-            </button>
+            </Link>
+
           </form>
         </div>
       </div>
 
-      {/* Footer Spacer */}
-      <div className="h-20"></div>
+      {/* Stats Section */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center divide-x-0 md:divide-x md:divide-x-reverse divide-gray-100">
+            <div className="p-4">
+              <div className="text-4xl md:text-5xl font-black text-blue-900 mb-2">+10,000</div>
+              <p className="text-gray-500 font-bold">وظيفة متاحة</p>
+            </div>
+            <div className="p-4">
+              <div className="text-4xl md:text-5xl font-black text-blue-900 mb-2">+5,000</div>
+              <p className="text-gray-500 font-bold">شركة مسجلة</p>
+            </div>
+            <div className="p-4">
+              <div className="text-4xl md:text-5xl font-black text-blue-900 mb-2">+150k</div>
+              <p className="text-gray-500 font-bold">سيرة ذاتية</p>
+            </div>
+            <div className="p-4">
+              <div className="text-4xl md:text-5xl font-black text-blue-900 mb-2">24h</div>
+              <p className="text-gray-500 font-bold">تحديث مستمر</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Content Spacer (for further sections) */}
+      <div className="h-24 bg-gray-50"></div>
 
     </div>
   );
