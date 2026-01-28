@@ -1,18 +1,24 @@
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
-import { MapPin, Calendar, Briefcase, ArrowLeft, ExternalLink } from 'lucide-react';
+import { MapPin, Calendar, Briefcase, ArrowLeft, ExternalLink, Building2, MessageCircle, Mail } from 'lucide-react';
 
 // Force dynamic rendering to ensure fresh data
 export const dynamic = 'force-dynamic';
 
-interface NewsItem {
-    id: number;
+interface Job {
+    id: string; // uuid
     title: string;
     description?: string;
-    source_url: string;
-    published: string;
-    image_url?: string;
+    source_url?: string;
+    created_at: string;
+    company_name?: string;
+    company_logo?: string;
     location?: string;
+    city?: string;
+    contact_info?: string;
+    phone?: string;
+    contact_phone?: string;
+    email?: string;
 }
 
 // Format date to local Arabic format
@@ -31,20 +37,43 @@ const formatDate = (dateString: string) => {
 };
 
 export default async function NewsPage() {
-    // 1. Fetch Data
-    const { data: news, error } = await supabase
-        .from('news')
+    // 1. Fetch Data from 'jobs' table
+    const { data: jobs, error } = await supabase
+        .from('jobs')
         .select('*')
-        .order('id', { ascending: false });
+        .order('created_at', { ascending: false });
 
     if (error) {
-        console.error('Error fetching news:', error);
+        console.error('Error fetching jobs:', error);
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
                 <div className="text-red-500 font-bold text-lg">حدث خطأ في تحميل الوظائف. يرجى المحاولة لاحقاً.</div>
             </div>
         );
     }
+
+    const getContactUrl = (job: Job) => {
+        let phone = job.contact_phone || job.phone;
+        let email = job.email;
+
+        if (!phone && !email && job.contact_info) {
+            try {
+                const info = typeof job.contact_info === 'string' ? JSON.parse(job.contact_info) : job.contact_info;
+                // @ts-ignore
+                if (info?.phones && info.phones.length > 0) phone = info.phones[0];
+                // @ts-ignore
+                if (info?.emails && info.emails.length > 0) email = info.emails[0];
+            } catch (e) { }
+        }
+
+        if (phone) {
+            const cleanPhone = phone.replace(/[^\d+]/g, '');
+            const message = encodeURIComponent(`مهتم بالوظيفة: ${job.title}`);
+            return { url: `https://wa.me/${cleanPhone}?text=${message}`, type: 'whatsapp' };
+        }
+        if (email) return { url: `mailto:${email}`, type: 'email' };
+        return null;
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
@@ -55,64 +84,100 @@ export default async function NewsPage() {
                         📢 أحدث الوظائف الحكومية والشركات
                     </h1>
                     <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-                        تصفح أحدث الفرص الوظيفية التي تم تجميعها تلقائياً من مختلف المصادر الموثوقة في المملكة.
+                        تصفح أحدث الوظائف المتاحة في المملكة.
                     </p>
                 </div>
 
                 {/* Grid Layout */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {news && news.length > 0 ? (
-                        news.map((item: NewsItem) => (
-                            <div key={item.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col border border-gray-100 group">
+                    {jobs && jobs.length > 0 ? (
+                        jobs.map((item: Job) => {
+                            const contact = getContactUrl(item);
+                            const companyName = item.company_name || 'جهة توظيف';
 
-                                {/* Image Header */}
-                                <div className="relative h-48 w-full bg-gray-200 overflow-hidden">
-                                    {item.image_url ? (
-                                        <img
-                                            src={item.image_url}
-                                            alt={item.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                        />
-                                    ) : (
-                                        <div className="flex items-center justify-center h-full w-full bg-gray-100 text-gray-400">
-                                            <Briefcase className="w-12 h-12 opacity-20" />
+                            return (
+                                <div key={item.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col border border-gray-100 group">
+
+                                    {/* Header with Circular Logo */}
+                                    <div className="p-6 pb-0 flex items-start gap-4">
+                                        {/* Logo or Placeholder */}
+                                        <div className="shrink-0">
+                                            {item.company_logo ? (
+                                                <img
+                                                    src={item.company_logo}
+                                                    alt={companyName}
+                                                    className="w-14 h-14 rounded-full object-cover border border-gray-100 shadow-sm"
+                                                />
+                                            ) : (
+                                                <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm text-blue-600 font-bold text-xl">
+                                                    {companyName.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
 
-                                    {/* Location Badge */}
-                                    <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 text-xs font-bold text-gray-700">
-                                        <MapPin className="w-3.5 h-3.5 text-red-500" />
-                                        <span>{item.location || 'المملكة العربية السعودية'}</span>
+                                        <div className="flex-1 min-w-0 pt-1">
+                                            <h2 className="text-lg font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
+                                                {item.title}
+                                            </h2>
+                                            <p className="text-gray-500 text-sm mt-1 truncate">{companyName}</p>
+                                        </div>
                                     </div>
 
-                                    {/* Date Badge (overlay bottom left) */}
-                                    <div className="absolute bottom-0 right-0 bg-blue-600 text-white px-4 py-1 rounded-tl-xl text-xs font-medium flex items-center gap-1.5">
-                                        <Calendar className="w-3.5 h-3.5" />
-                                        <span>{formatDate(item.published)}</span>
+                                    {/* Metadata */}
+                                    <div className="px-6 py-4 flex flex-wrap gap-3 text-sm text-gray-500">
+                                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full">
+                                            <MapPin className="w-4 h-4 text-gray-400" />
+                                            <span>{item.city || item.location || 'السعودية'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full">
+                                            <Calendar className="w-4 h-4 text-gray-400" />
+                                            <span>{formatDate(item.created_at)}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Content Body */}
+                                    <div className="px-6 pb-6 flex-1 flex flex-col">
+                                        <p className="text-gray-500 text-sm leading-relaxed line-clamp-3 mb-6 flex-1">
+                                            {item.description || "انقر لعرض تفاصيل الوظيفة."}
+                                        </p>
+
+                                        {/* Action Buttons */}
+                                        <div className="mt-auto flex gap-3">
+                                            {contact ? (
+                                                <a
+                                                    href={contact.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`flex-1 ${contact.type === 'whatsapp' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg`}
+                                                >
+                                                    {contact.type === 'whatsapp' ? <MessageCircle className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
+                                                    <span>تواصل الآن</span>
+                                                </a>
+                                            ) : (
+                                                <Link
+                                                    href={`/news/${item.id}`} // Or update to jobs route
+                                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md"
+                                                >
+                                                    <span>التفاصيل</span>
+                                                </Link>
+                                            )}
+
+                                            {item.source_url && (
+                                                <a
+                                                    href={item.source_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-3 rounded-xl transition-all"
+                                                    title="المصدر الأصلي"
+                                                >
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </a>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Content Body */}
-                                <div className="p-6 flex-1 flex flex-col">
-                                    <h2 className="text-lg font-bold text-gray-900 mb-3 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
-                                        {item.title}
-                                    </h2>
-
-                                    <p className="text-gray-500 text-sm leading-relaxed line-clamp-3 mb-6 flex-1">
-                                        {item.description || "لا يوجد وصف مختصر لهذه الوظيفة. يرجى زيارة الرابط للاطلاع على كافة التفاصيل."}
-                                    </p>
-
-                                    {/* Action Button */}
-                                    <Link
-                                        href={`/news/${item.id}`}
-                                        className="w-full mt-auto bg-gray-50 hover:bg-blue-600 hover:text-white text-blue-600 font-bold py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group-hover/btn"
-                                    >
-                                        <span>عرض التفاصيل</span>
-                                        <ArrowLeft className="w-4 h-4" />
-                                    </Link>
-                                </div>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="col-span-full text-center py-20">
                             <div className="bg-white p-10 rounded-3xl shadow-sm inline-block max-w-md mx-auto">
