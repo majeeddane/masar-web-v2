@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "Job Portal for the Future",
 };
 
+import { AuthProvider } from "@/providers/AuthProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -21,9 +23,12 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body
+        suppressHydrationWarning={true}
         className={`${cairo.variable} font-sans antialiased bg-slate-50 text-slate-900`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

@@ -16,23 +16,38 @@ export default function LoginPage() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('Login attempt started');
         setLoading(true);
         setError(null);
 
         try {
+            console.log('Calling supabase.auth.signInWithPassword');
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
+            console.log('Supabase response:', { data, error });
+
             if (error) {
+                console.error('Supabase login error:', error);
                 throw error;
             }
 
-            // Redirect to dashboard or home on success
-            router.push('/dashboard');
+            if (data?.user) {
+                console.log('Login successful, redirecting to /dashboard');
+                window.location.assign('/dashboard');
+            } else {
+                console.warn('Login successful but no user returned?', data);
+                alert('Login returned success but no user data found.');
+            }
+
         } catch (err: any) {
+            console.error('Login catch block:', err);
             let errorMessage = err.message || 'حدث خطأ أثناء تسجيل الدخول';
+
+            // Critical debug alert
+            alert(`Login Failed:\n${errorMessage}`);
 
             if (errorMessage.includes('Email not confirmed')) {
                 errorMessage = 'يرجى تأكيد بريدك الإلكتروني. تفقد صندوق الوارد (أو البريد العشوائي) لتفعيل حسابك.';
@@ -43,6 +58,7 @@ export default function LoginPage() {
             setError(errorMessage);
         } finally {
             setLoading(false);
+            console.log('Login attempt finished');
         }
     };
 
@@ -92,8 +108,17 @@ export default function LoginPage() {
                         </div>
 
                         {error && (
-                            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 text-center border border-red-100 animate-fade-in">
-                                {error}
+                            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 text-center border border-red-100 animate-fade-in flex flex-col gap-2">
+                                <span>{error}</span>
+                                {error.includes('لم يتم إنشاء جلسة') && (
+                                    <button
+                                        type="button"
+                                        onClick={() => window.location.href = '/dashboard'}
+                                        className="mt-2 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 py-1 px-3 rounded text-xs font-bold transition-colors"
+                                    >
+                                        I can't confirm my email - Bypass mode &rarr;
+                                    </button>
+                                )}
                             </div>
                         )}
 

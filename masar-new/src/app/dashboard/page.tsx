@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabaseServer'
 import { Briefcase, CheckCircle, Archive } from 'lucide-react'
+import { redirect } from 'next/navigation'
 import MyJobsTable from './my-jobs-table'
 
 export const dynamic = 'force-dynamic'
@@ -10,31 +11,34 @@ export default async function DashboardPage() {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Fetch stats
-    const [
-        { count: totalJobs },
-        { count: activeJobs },
-        { count: archivedJobs },
-        { data: jobs, error }
-    ] = await Promise.all([
-        supabase.from('jobs').select('*', { count: 'exact', head: true }),
-        supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'archived'), // Assuming 'archived' status
-        supabase
-            .from('jobs')
-            .select('*')
-            //.eq('author_id', user!.id) // Removed user filter to match "total jobs in Supabase" request, or should I keep it? 
-            // The request says "total count of jobs in Supabase". It doesn't strictly say "my jobs". 
-            // However, the page title is "وظائفي المعلنة" (My Posted Jobs).
-            // Contextually, if this is the "Real Job Scraper" output, maybe this dashboard is for the Admin to see *all* scraped jobs?
-            // "Fetch these counts directly from the 'jobs' table".
-            // I will assume global counts for this Admin/Dashboard view since the user just built a scraper.
-            .order('created_at', { ascending: false })
-            .limit(20) // Limit for table display
-    ])
+    if (!user) {
+        // Redundant safety check if middleware fails
+        redirect('/login');
+    }
 
-    if (error) {
-        console.error('Error fetching jobs:', error)
+    // Fetch stats safe handling
+    let totalJobs = 0, activeJobs = 0, archivedJobs = 0, jobs = [], fetchError = null;
+
+    try {
+        const results = await Promise.all([
+            supabase.from('jobs').select('*', { count: 'exact', head: true }),
+            supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+            supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'archived'),
+            supabase
+                .from('jobs')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(20)
+        ]);
+
+        totalJobs = results[0].count || 0;
+        activeJobs = results[1].count || 0;
+        archivedJobs = results[2].count || 0;
+        jobs = results[3].data || [];
+
+    } catch (e) {
+        console.error('Dashboard data fetch error:', e);
+        fetchError = e;
     }
 
     return (

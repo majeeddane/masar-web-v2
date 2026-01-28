@@ -21,7 +21,8 @@ export default function SignupPage() {
         setSuccess(false);
 
         try {
-            const { data, error } = await supabase.auth.signUp({
+            // 1. Attempt Signup
+            let { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
@@ -31,16 +32,36 @@ export default function SignupPage() {
                 }
             });
 
-            if (error) {
-                // Handle "User already exists" nicely
-                if (error.message.includes("User already registered")) {
-                    throw new Error("هذا البريد الإلكتروني مسجل بالفعل.");
+            // 2. Handle "User already registered" -> Auto-Login
+            if (error && error.message.includes("User already registered")) {
+                console.log("User exists, attempting auto-login...");
+                const loginResult = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+
+                if (loginResult.error) {
+                    if (loginResult.error.message.includes("Invalid login credentials")) {
+                        throw new Error("هذا البريد مسجل مسبقاً، ولكن كلمة المرور غير صحيحة. يرجى تسجيل الدخول.");
+                    }
+                    throw loginResult.error;
                 }
-                throw error;
+
+                data = loginResult.data;
+                error = null; // Clear error since login succeeded
             }
 
-            // Success state
-            setSuccess(true);
+            if (error) throw error;
+
+            // 3. Handle Success / Redirect
+            if (data.session) {
+                // Confirm Email is OFF, so we have a session. GO TO DASHBOARD.
+                window.location.assign('/dashboard');
+            } else if (data.user && !data.session) {
+                // Edge case: Confirm Email might still be ON?
+                setSuccess(true); // Fallback to "Check Email" message
+            }
+
         } catch (err: any) {
             setError(err.message || 'حدث خطأ أثناء إنشاء الحساب');
         } finally {
