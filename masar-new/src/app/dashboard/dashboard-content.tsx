@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Briefcase, CheckCircle, Archive, RefreshCw, Loader2, Palette, Building2, MapPin, ExternalLink, Calendar, PenTool, Home } from 'lucide-react';
+import { Briefcase, CheckCircle, Archive, RefreshCw, Loader2, Palette, Building2, MapPin, ExternalLink, Calendar, PenTool, Home, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient'; // Client-side Supabase
 
 // Helper to get formatted date
@@ -36,6 +36,20 @@ export default function DashboardContent({ initialUser }: { initialUser: any }) 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [stats, setStats] = useState({ total: 0, active: 0, archived: 0 });
+
+    // Search & Filter State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [cityFilter, setCityFilter] = useState('');
+
+    // Derived Data
+    const uniqueCities = Array.from(new Set(jobs.map((j: any) => j.location).filter(Boolean))) as string[];
+
+    const filteredJobs = jobs.filter((job: any) => {
+        const matchesSearch = (job.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+            (job.company_name?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+        const matchesCity = cityFilter ? job.location === cityFilter : true;
+        return matchesSearch && matchesCity;
+    });
 
     // Fetch Jobs Function
     const fetchJobs = async () => {
@@ -172,14 +186,55 @@ export default function DashboardContent({ initialUser }: { initialUser: any }) 
                 </div>
             </div>
 
+            {/* Search and Filter Section */}
+            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mb-8">
+                <div className="flex flex-col md:flex-row gap-4">
+                    {/* Search Input */}
+                    <div className="relative flex-1">
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <Search className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="ابحث عن المسمى الوظيفي أو الشركة..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full h-12 pr-10 pl-4 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-medium text-gray-900 placeholder:text-gray-400"
+                        />
+                    </div>
+
+                    {/* City Filter */}
+                    <div className="relative w-full md:w-1/4">
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <MapPin className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <select
+                            value={cityFilter}
+                            onChange={(e) => setCityFilter(e.target.value)}
+                            className="w-full h-12 pr-10 pl-8 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-medium text-gray-900 cursor-pointer appearance-none"
+                        >
+                            <option value="">جميع المدن</option>
+                            {uniqueCities.map((city: string) => (
+                                <option key={city} value={city}>{city}</option>
+                            ))}
+                        </select>
+                        {/* Custom Arrow */}
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Jobs Grid Section */}
             <div>
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="font-bold text-2xl text-gray-900 flex items-center gap-2">
                         <Briefcase className="w-6 h-6 text-blue-600" />
-                        أحدث الوظائف المتاحة
+                        نتائج البحث ({filteredJobs.length})
                     </h2>
-                    {jobs.length > 0 && <span className="text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{jobs.length} وظيفة</span>}
                 </div>
 
                 {loading ? (
@@ -187,9 +242,9 @@ export default function DashboardContent({ initialUser }: { initialUser: any }) 
                         <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
                         <p className="text-gray-500 font-medium">جاري تحميل الوظائف...</p>
                     </div>
-                ) : jobs.length > 0 ? (
+                ) : filteredJobs.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {jobs.map((job) => (
+                        {filteredJobs.map((job) => (
                             <div key={job.id} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group">
                                 {/* Header: Icon & Date */}
                                 <div className="flex justify-between items-start mb-4">
