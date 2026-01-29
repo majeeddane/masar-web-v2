@@ -1,9 +1,9 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
-import { createClient } from '@/lib/supabaseClient';
+// التصحيح: استيراد العميل الجاهز مباشرة من ملف المكتبة الخاص بك
+import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 
 interface Notification {
@@ -20,7 +20,8 @@ export default function NotificationBell() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
-    const supabase = createClient();
+
+    // تم حذف سطر const supabase = createClient() لأنه خطأ برمجي هنا
 
     const fetchNotifications = async () => {
         const { data: { user } } = await supabase.auth.getUser();
@@ -84,7 +85,7 @@ export default function NotificationBell() {
                 <div className="absolute left-0 mt-3 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[100]">
                     <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50">
                         <h3 className="font-bold text-gray-700">الإشعارات</h3>
-                        <span className="text-xs text-blue-600 cursor-pointer hover:underline" onClick={() => { /* mark all read */ }}>تحديد الكل كمقروء</span>
+                        <span className="text-xs text-blue-600 cursor-pointer hover:underline">تحديد الكل كمقروء</span>
                     </div>
                     <div className="max-h-[400px] overflow-y-auto">
                         {notifications.length > 0 ? (
@@ -96,7 +97,9 @@ export default function NotificationBell() {
                                 >
                                     <div className="flex justify-between items-start mb-1">
                                         <h4 className="font-bold text-sm text-gray-800">{notif.title}</h4>
-                                        <span className="text-[10px] text-gray-400">{new Date(notif.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
+                                        <span className="text-[10px] text-gray-400">
+                                            {new Date(notif.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
                                     </div>
                                     <p className="text-xs text-gray-500 mb-2">{notif.message}</p>
                                     {notif.link && (
