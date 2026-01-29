@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Briefcase, MapPin, Clock, ArrowRight, Share2, Building2 } from 'lucide-react';
 import { createClient } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
+import ApplyButton from '@/components/ApplyButton';
 
 // Allow params to be passed correctly in Next.js 15
 export default async function JobDetailPage({
@@ -13,6 +14,7 @@ export default async function JobDetailPage({
     const decodedSlug = decodeURIComponent(slug);
 
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
     // Fetch Job Data
     const { data: job, error } = await supabase
@@ -25,8 +27,17 @@ export default async function JobDetailPage({
         notFound();
     }
 
-    // Check if saved (if user is logged in - logic to be added later)
-    const isSaved = false;
+    // Check application status
+    let isApplied = false;
+    if (user) {
+        const { data: app } = await supabase
+            .from('applications')
+            .select('id')
+            .eq('job_id', job.id)
+            .eq('user_id', user.id)
+            .single();
+        if (app) isApplied = true;
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900" dir="rtl">
@@ -74,9 +85,7 @@ export default async function JobDetailPage({
                             </div>
 
                             <div className="flex flex-col gap-3 w-full md:w-auto">
-                                <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-8 py-4 rounded-xl shadow-lg transition-all w-full md:w-auto text-center">
-                                    تقديم الآن
-                                </button>
+                                <ApplyButton jobId={job.id} jobTitle={job.title} isApplied={isApplied} />
                                 <button className="bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 font-bold px-8 py-4 rounded-xl transition-all w-full md:w-auto flex items-center justify-center gap-2">
                                     <Share2 className="w-5 h-5" />
                                     مشاركة
@@ -111,7 +120,11 @@ export default async function JobDetailPage({
                                     </li>
                                     <li className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0">
                                         <span className="text-gray-500">نوع العمل</span>
-                                        <span className="font-bold text-slate-800">دوام كامل</span>
+                                        <span className="font-bold text-slate-800">{job.job_type || 'دوام كامل'}</span>
+                                    </li>
+                                    <li className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0">
+                                        <span className="text-gray-500">المستوى</span>
+                                        <span className="font-bold text-slate-800">{job.experience_level || 'غير محدد'}</span>
                                     </li>
                                 </ul>
                             </div>

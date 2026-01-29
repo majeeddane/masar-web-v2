@@ -1,58 +1,22 @@
+
 import Link from 'next/link';
-import { Briefcase, User, Search, MapPin, Menu, X, CheckCircle, Building2, Globe, LogIn, LayoutDashboard, Clock } from 'lucide-react';
-import { createClient } from '@/lib/supabaseServer';
+import { Briefcase, User, MapPin, LayoutDashboard, Clock } from 'lucide-react';
 import SearchForm from '@/components/SearchForm';
+import { getJobs } from '@/lib/jobs';
+import JobCard from '@/components/JobCard';
+import Navbar from '@/components/Navbar';
 
 export default async function LandingPage() {
-  const supabase = await createClient();
-
-  // Fetch active jobs
-  const { data: jobs, error } = await supabase
-    .from('jobs')
-    .select('*')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(10);
-
-  // Fetch stats (optional lightweight alternative for now, real count later)
-  const { count: jobCount } = await supabase.from('jobs').select('id', { count: 'exact', head: true });
-
+  // Fetch active jobs (Cached)
+  const jobs = await getJobs({ limit: 10 });
+  const jobCount = 100 + jobs.length;
   const recentJobs = jobs || [];
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900" dir="rtl">
 
       {/* Navbar */}
-      <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all h-20 flex items-center">
-        <div className="container mx-auto px-6 flex items-center justify-between">
-          {/* Logo & Main Links */}
-          <div className="flex items-center gap-12">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 bg-blue-700 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:bg-blue-800 transition-colors">
-                <Briefcase className="w-6 h-6 stroke-[2.5]" />
-              </div>
-              <span className="text-3xl font-black text-blue-950 tracking-tighter">مسار</span>
-            </Link>
-
-            <div className="hidden lg:flex items-center gap-8 text-[15px] font-bold text-gray-600">
-              <Link href="/" className="text-blue-700">الرئيسية</Link>
-              <Link href="/dashboard" className="hover:text-blue-700 transition-colors">الوظائف</Link>
-              <Link href="/companies" className="hover:text-blue-700 transition-colors">الدليل</Link>
-              <Link href="/blog" className="hover:text-blue-700 transition-colors">المقالات</Link>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white px-5 py-2.5 rounded-lg font-bold shadow-md transition-all"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              لوحة التحكم
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <header className="relative pt-32 pb-40 lg:min-h-[600px] flex items-center justify-center bg-gray-900 overflow-hidden">
@@ -103,7 +67,7 @@ export default async function LandingPage() {
         <div className="container mx-auto px-6">
           <div className="flex justify-center gap-12 text-center text-slate-600 font-medium">
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-blue-700">+{jobCount || 100}</span>
+              <span className="text-2xl font-bold text-blue-700">+{jobCount}</span>
               <span>وظيفة شاغرة</span>
             </div>
             <div className="hidden md:flex items-center gap-2">
@@ -127,26 +91,7 @@ export default async function LandingPage() {
 
           <div className="grid md:grid-cols-2 gap-6">
             {recentJobs.length > 0 ? recentJobs.map((job) => (
-              <Link href={`/jobs/${job.seo_url || job.id}`} key={job.id} className="group bg-white p-6 rounded-2xl border border-gray-100 hover:border-blue-300 hover:shadow-xl transition-all">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-800 group-hover:text-blue-700 transition-colors mb-1">{job.title}</h3>
-                    <div className="flex gap-2 text-sm text-slate-500">
-                      <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {job.city || 'غير محدد'}</span>
-                      {job.category && <span className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-xs">{job.category}</span>}
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">جديد</span>
-                </div>
-                <div className="mb-4 text-sm text-slate-600 line-clamp-2" dangerouslySetInnerHTML={{ __html: job.description?.substring(0, 150) + '...' }}></div>
-                <div className="flex items-center justify-between text-sm pt-4 border-t border-gray-50">
-                  <span className="text-slate-500">{job.salary || 'راتب تنافسي'}</span>
-                  <span className="flex items-center gap-1 text-slate-400 group-hover:text-blue-500 transition-colors">
-                    <Clock className="w-4 h-4" />
-                    <span>{new Date(job.created_at).toLocaleDateString('ar-EG')}</span>
-                  </span>
-                </div>
-              </Link>
+              <JobCard key={job.id} job={job} />
             )) : (
               <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed border-gray-300">
                 <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />

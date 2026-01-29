@@ -54,6 +54,11 @@ async function scrapeJobs(): Promise<ScrapedJob[]> {
             title: 'Marketing Manager',
             location: 'Jeddah',
             original_description: `Seeking a Marketing Manager. Must know SEO, SEM.`
+        },
+        {
+            title: 'Senior Backend Engineer',
+            location: 'Riyadh',
+            original_description: `We need a Senior Backend Engineer. Experience: 5+ years. Tech stack: Node.js, PostgreSQL, Redis. Full-time position. Salary: 15,000 - 20,000 SAR.`
         }
     ];
     return mockJobs;
@@ -104,7 +109,11 @@ export async function runPipeline() {
                 description: `<p>${job.original_description}</p><p><em>(AI Rewrite Unavailable)</em></p>`,
                 category: 'General',
                 salary_range: 'Not specified',
-                skills_required: ['Communication', 'General Skills'] // Fallback skills
+                skills_required: ['Communication', 'General Skills'], // Fallback skills
+                job_type: 'Full-time',
+                experience_level: 'Entry',
+                salary_min: 0,
+                salary_max: 0
             };
         }
         else {
@@ -123,6 +132,12 @@ export async function runPipeline() {
             job_hash: jobHash,
             seo_url: seo_url,
             salary: rewritten.salary_range || 'Not specified',
+            // New Fields
+            job_type: rewritten.job_type || 'Full-time',
+            experience_level: rewritten.experience_level || 'Entry',
+            salary_min: rewritten.salary_min || 0,
+            salary_max: rewritten.salary_max || 0,
+
             is_active: true,
             created_by: null
         });
