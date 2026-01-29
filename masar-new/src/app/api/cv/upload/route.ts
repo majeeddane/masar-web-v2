@@ -32,7 +32,8 @@ export async function POST(request: Request) {
         // 2. Extract Text (PDF Parse)
         let text = '';
         try {
-            const data = await pdf(buffer);
+            const options = { pagerender: () => "" };
+            const data = await pdf(buffer, options);
             text = data.text;
         } catch (e) {
             console.error('PDF Parse Error:', e);
