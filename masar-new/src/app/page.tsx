@@ -6,6 +6,8 @@ import { getJobs } from '@/lib/jobs';
 import JobCard from '@/components/JobCard';
 import Navbar from '@/components/Navbar';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LandingPage() {
   // Fetch active jobs (Cached)
   const jobs = await getJobs({ limit: 10 });
