@@ -1,27 +1,59 @@
 import { NextResponse } from 'next/server';
 import { scrapeJobs } from '@/lib/scraper';
-import { createClient } from '@supabase/supabase-js'; // DIRECT IMPORT for Admin Client
+import { createClient } from '@supabase/supabase-js'; // Admin Client
+import { createClient as createServerClient } from '@/lib/supabaseServer'; // Auth Client
 
 export async function POST(req: Request) {
     try {
         console.log('🚀 API: /api/scrape called');
 
-        // 1. Run the Scraper
+        // --- 1. Security Check (Dual Layer) ---
+        let isAuthorized = false;
+        let authMethod = '';
+
+        // Layer A: Check for CRON_SECRET (Scheduled Tasks)
+        const authHeader = req.headers.get('authorization');
+        const cronSecret = process.env.CRON_SECRET;
+
+        if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+            isAuthorized = true;
+            authMethod = 'CRON_SECRET';
+        }
+
+        // Layer B: Check for User Session (Manual Trigger)
+        if (!isAuthorized) {
+            const supabaseAuth = await createServerClient();
+            const { data: { user } } = await supabaseAuth.auth.getUser();
+            if (user) {
+                isAuthorized = true;
+                authMethod = 'USER_SESSION';
+            }
+        }
+
+        if (!isAuthorized) {
+            console.error('⛔ Access Denied: Missing CRON_SECRET or Valid Session');
+            return NextResponse.json({ error: 'Unauthorized Access' }, { status: 401 });
+        }
+
+        console.log(`✅ Authorized via: ${authMethod}`);
+
+        // --- 2. Run the Scraper ---
         const jobs = await scrapeJobs();
 
         if (!jobs || jobs.length === 0) {
             return NextResponse.json({ success: false, message: 'No jobs found.' }, { status: 404 });
         }
 
-        // 2. Initialize Admin Supabase Client (Bypass RLS)
+        // --- 3. Database Sync (Admin Privileges) ---
+        // Only initialize Admin Client AFTER auth check passes
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
         const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
         if (!serviceRoleKey) {
-            console.error('❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing in .env.local');
+            console.error('❌ Configuration Error: Missing SUPABASE_SERVICE_ROLE_KEY');
             return NextResponse.json({
                 success: false,
-                message: 'Configuration Error: Missing SUPABASE_SERVICE_ROLE_KEY. Please add it to .env.local to bypass RLS.'
+                message: 'Server Configuration Error. Check logs.'
             }, { status: 500 });
         }
 
@@ -32,14 +64,11 @@ export async function POST(req: Request) {
             }
         });
 
-        // A. Clear existing data
+        // A. Clear existing data (Demo Mode)
         const { error: deleteError } = await supabaseAdmin.from('jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         if (deleteError) console.error('Clear DB Error:', deleteError);
 
-        // B. Prepare Data for Insertion
-        // We removed 'author_id' previously to fix schemas. Any other 'not null' fields must be satisfied by DB defaults.
-        let insertedCount = 0;
-
+        // B. Insert New Data
         const jobsToInsert = jobs.map(job => ({
             title: job.title,
             company_name: job.company,
@@ -51,10 +80,11 @@ export async function POST(req: Request) {
         }));
 
         const { data, error } = await supabaseAdmin.from('jobs').insert(jobsToInsert).select();
+        let insertedCount = 0;
 
         if (error) {
             console.error('Insert Error details:', error);
-            return NextResponse.json({ success: false, message: 'DB Insert Failed: ' + error.message, error }, { status: 500 });
+            return NextResponse.json({ success: false, message: 'DB Insert Failed: ' + error.message }, { status: 500 });
         } else {
             insertedCount = data?.length || 0;
         }

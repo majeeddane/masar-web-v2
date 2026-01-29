@@ -12,12 +12,8 @@ export interface ScrapedJob {
 }
 
 export async function scrapeJobs(): Promise<ScrapedJob[]> {
-    console.log('🕷️ Starting Live Scraper...');
+    console.log('🕷️ Starting Live Scraper (Quality Mode)...');
     const jobs: ScrapedJob[] = [];
-
-    // Strategies:
-    // 1. Google News RSS for "Jobs in Saudi Arabia" (Reliable, high availability, "Real Time")
-    // We will search for specific queries mapping to the user request.
 
     const queries = [
         { q: 'وظائف مصمم جرافيك السعودية', cat: 'Design' },
@@ -35,14 +31,31 @@ export async function scrapeJobs(): Promise<ScrapedJob[]> {
             const $ = cheerio.load(data, { xmlMode: true });
 
             $('item').each((_, el) => {
-                const titleFull = $(el).find('title').text(); // Often "Job Title - Source" or "Company - Job Title"
+                const titleFull = $(el).find('title').text();
                 const link = $(el).find('link').text();
                 const pubDate = $(el).find('pubDate').text();
-                const description = $(el).find('description').text();
 
-                // Clean Title Logic
+                // --- Clean Description ---
+                let rawDescription = $(el).find('description').text();
+                // Remove HTML tags
+                let cleanDescription = rawDescription.replace(/<[^>]*>?/gm, "").trim();
+
+                // --- Quality Filter ---
+                if (!cleanDescription || cleanDescription.length < 50) {
+                    // Skip empty or too short descriptions
+                    return;
+                }
+
+                // If the description is just "..." or "click here", skip it
+                if (cleanDescription.includes('click here to read') || cleanDescription.length < 80) {
+                    // Try to enhance or skip. For now, strict skip to ensure "Premium" feel.
+                    // A real premium scraper would visit the 'link' and parse the full page body.
+                    // For this stage, we simply filter out the noise.
+                    return;
+                }
+
+                // --- Parse Metadata ---
                 // Example: "Graphic Designer - Riyadh - Company Name"
-                // We'll try to split by hyphen to guess company/title
                 let title = titleFull;
                 let company = 'Unknown Company';
                 let location = 'Saudi Arabia';
@@ -50,16 +63,14 @@ export async function scrapeJobs(): Promise<ScrapedJob[]> {
                 const parts = titleFull.split('-');
                 if (parts.length >= 2) {
                     title = parts[0].trim();
-                    // Assumption: last part is source/company often in Google News
                     company = parts[parts.length - 1].trim();
                 }
 
-                // Detect City in title
                 if (titleFull.includes('الرياض') || titleFull.includes('Riyadh')) location = 'Riyadh';
                 if (titleFull.includes('جدة') || titleFull.includes('Jeddah')) location = 'Jeddah';
                 if (titleFull.includes('الدمام') || titleFull.includes('Dammam')) location = 'Dammam';
 
-                // Basic Deduplication check (in memory for this batch)
+                // Basic Deduplication
                 const exists = jobs.find(j => j.source_url === link);
                 if (!exists) {
                     jobs.push({
@@ -68,18 +79,17 @@ export async function scrapeJobs(): Promise<ScrapedJob[]> {
                         location: location,
                         category: query.cat,
                         source_url: link,
-                        description: `Found via Google News. Source: ${company}. \n\n${description.replace(/<[^>]*>?/gm, "")}`, // Remove HTML tags
+                        description: cleanDescription,
                         posted_at: new Date(pubDate).toISOString()
                     });
                 }
             });
         }
 
-        console.log(`✅ Scraped ${jobs.length} real jobs successfully.`);
+        console.log(`✅ Scraped ${jobs.length} high-quality jobs successfully.`);
 
     } catch (error) {
         console.error('❌ Scraper failed:', error);
-        // Fallback checks could go here, but Google News is highly reliable.
     }
 
     return jobs;

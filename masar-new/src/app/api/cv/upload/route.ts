@@ -1,34 +1,46 @@
-// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabaseServer';
 import { extractSkillsFromCV } from '@/lib/ai';
 
-// Polyfill for Vercel/Node environment where DOMMatrix/ImageData might be missing
-// when pdf-parse tries to initialize.
-if (typeof Promise.withResolvers === "undefined") {
-    // Some envs might need this too, but mainly DOMMatrix.
-}
+// --- Utility: PDF Parser Safe Wrapper ---
+// Wraps the fragile pdf-parse logic and environment shims
+async function parsePdfSafe(buffer: Buffer): Promise<string> {
+    // 1. Shims for Node.js environment (required by pdf-parse dependencies)
+    if (!global.DOMMatrix) {
+        // @ts-ignore - Shim for dependency
+        global.DOMMatrix = class {
+            constructor() { return this; }
+            multiplySelf() { return this; }
+            preMultiplySelf() { return this; }
+            translateSelf() { return this; }
+            scaleSelf() { return this; }
+            rotateSelf() { return this; }
+            skewXSelf() { return this; }
+            skewYSelf() { return this; }
+        };
+    }
+    if (!global.ImageData) {
+        // @ts-ignore - Shim for dependency
+        global.ImageData = class { constructor() { return this; } };
+    }
 
-// Global Shims for pdf-parse (it relies on browser APIs sometimes)
-global.DOMMatrix = global.DOMMatrix || class {
-    constructor() { return this; }
-    multiplySelf() { return this; }
-    preMultiplySelf() { return this; }
-    translateSelf() { return this; }
-    scaleSelf() { return this; }
-    rotateSelf() { return this; }
-    skewXSelf() { return this; }
-    skewYSelf() { return this; }
-};
-
-global.ImageData = global.ImageData || class {
-    constructor() { return this; }
-};
-
-export async function POST(request: Request) {
-    // Lazy load pdf-parse to avoid top-level evaluation issues during build
+    // 2. Lazy Import
+    // Using require to avoid top-level load which might trigger Vercel build inspection
     const pdf = require('pdf-parse');
 
+    // 3. Parse with disabled rendering
+    const options = { pagerender: () => "" };
+
+    try {
+        const data = await pdf(buffer, options);
+        return data.text;
+    } catch (e) {
+        console.error('Inner PDF Parse Lib Error:', e);
+        throw new Error('Failed to parse PDF content');
+    }
+}
+
+export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -48,23 +60,13 @@ export async function POST(request: Request) {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        // 2. Extract Text (PDF Parse)
-        let text = '';
-        try {
-            // Disable page rendering to prevent further canvas/DOM usage
-            const options = { pagerender: () => "" };
-            const data = await pdf(buffer, options);
-            text = data.text;
-        } catch (e) {
-            console.error('PDF Parse Error:', e);
-            return NextResponse.json({ error: 'Failed to parse PDF' }, { status: 500 });
-        }
+        // 2. Extract Text (Safe Mode)
+        const text = await parsePdfSafe(buffer);
 
         // 3. AI Extract Skills
         const skills = await extractSkillsFromCV(text);
 
-        // 4. Save to DB (cvs table)
-        // Check if user already has a CV entry
+        // 4. Save to DB
         const { data: existingCV } = await supabase
             .from('cvs')
             .select('id')
@@ -72,14 +74,17 @@ export async function POST(request: Request) {
             .single();
 
         let cvData;
+
+        // Define payload for type safety if needed, or use inline
+        const payload = {
+            content_text: text,
+            skills_extracted: skills,
+        };
+
         if (existingCV) {
             const { data, error } = await supabase
                 .from('cvs')
-                .update({
-                    content_text: text, // Store raw text for future matching
-                    skills_extracted: skills,
-                    updated_at: new Date().toISOString()
-                })
+                .update({ ...payload, updated_at: new Date().toISOString() })
                 .eq('id', existingCV.id)
                 .select()
                 .single();
@@ -88,11 +93,7 @@ export async function POST(request: Request) {
         } else {
             const { data, error } = await supabase
                 .from('cvs')
-                .insert({
-                    user_id: user.id,
-                    content_text: text,
-                    skills_extracted: skills
-                })
+                .insert({ ...payload, user_id: user.id })
                 .select()
                 .single();
             if (error) throw error;
