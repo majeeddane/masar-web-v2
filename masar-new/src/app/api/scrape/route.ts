@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { scrapeJobs } from '@/lib/scraper';
 import { createClient } from '@supabase/supabase-js';
 
-export async function POST(req: Request) {
+// تم تغيير النوع من POST إلى GET ليتوافق مع محرك Vercel Cron
+export async function GET(req: Request) {
     // 1. التحقق من مفتاح الأمان الخاص بـ Vercel Cron
     const authHeader = req.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
