@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { scrapeJobs } from '@/lib/scraper';
 import { createClient } from '@supabase/supabase-js';
 
-// النوع GET متوافق الآن مع Vercel Cron
+// النوع GET متوافق مع Vercel Cron وتجاوزنا خطأ 405
 export async function GET(req: Request) {
     const authHeader = req.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -32,12 +32,10 @@ export async function GET(req: Request) {
 
         const jobsToInsert = jobs.map(job => ({
             title: job.title,
-            company: job.company, // تم تعديل الاسم من company_name إلى company ليطابق قاعدة بياناتك
-            location: job.location,
-            category: job.category,
-            source_url: job.source_url,
             description: job.description,
-            posted_at: job.posted_at
+            city: job.location, // تم التغيير من location إلى city لتطابق جدولك
+            category: job.category,
+            // ملاحظة: حذفنا company و source_url و posted_at لأنها غير موجودة في Supabase حالياً
         }));
 
         const { data, error } = await supabaseAdmin.from('jobs').insert(jobsToInsert).select();
