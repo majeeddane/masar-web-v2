@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { scrapeJobs } from '@/lib/scraper';
 import { createClient } from '@supabase/supabase-js';
 
-// تم تغيير النوع من POST إلى GET ليتوافق مع محرك Vercel Cron
+// النوع GET متوافق الآن مع Vercel Cron
 export async function GET(req: Request) {
-    // 1. التحقق من مفتاح الأمان الخاص بـ Vercel Cron
     const authHeader = req.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         console.error('⛔ محاولة وصول غير مصرح بها للـ Cron');
@@ -28,12 +27,12 @@ export async function GET(req: Request) {
 
         const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-        // 2. تحديث قاعدة البيانات (مسح القديم وحفظ الجديد)
+        // مسح الوظائف القديمة لتحديث القائمة
         await supabaseAdmin.from('jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
         const jobsToInsert = jobs.map(job => ({
             title: job.title,
-            company_name: job.company,
+            company: job.company, // تم تعديل الاسم من company_name إلى company ليطابق قاعدة بياناتك
             location: job.location,
             category: job.category,
             source_url: job.source_url,
