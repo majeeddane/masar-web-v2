@@ -5,8 +5,12 @@ import path from 'path';
 import crypto from 'crypto';
 import { rewriteJob } from '@/lib/ai';
 
-// Load environment variables from .env.local
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+// Load environment variables from .env.local (Local execution only)
+try {
+    dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+} catch (e) {
+    // Ignore in production/Vercel where vars are injected
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
