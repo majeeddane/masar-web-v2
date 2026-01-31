@@ -2,13 +2,11 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabaseServer';
 import { extractSkillsFromCV } from '@/lib/ai';
 
-// --- Utility: PDF Parser Safe Wrapper ---
-// Wraps the fragile pdf-parse logic and environment shims
-async function parsePdfSafe(buffer: Buffer): Promise<string> {
-    // 1. Shims for Node.js environment (required by pdf-parse dependencies)
-    if (!global.DOMMatrix) {
-        // @ts-ignore - Shim for dependency
-        global.DOMMatrix = class {
+// دالة لمعالجة البيئة قبل استدعاء المكتبة
+function applyNodeShims() {
+    if (typeof globalThis.DOMMatrix === 'undefined') {
+        // @ts-ignore
+        globalThis.DOMMatrix = class {
             constructor() { return this; }
             multiplySelf() { return this; }
             preMultiplySelf() { return this; }
@@ -19,24 +17,25 @@ async function parsePdfSafe(buffer: Buffer): Promise<string> {
             skewYSelf() { return this; }
         };
     }
-    if (!global.ImageData) {
-        // @ts-ignore - Shim for dependency
-        global.ImageData = class { constructor() { return this; } };
+    if (typeof globalThis.ImageData === 'undefined') {
+        // @ts-ignore
+        globalThis.ImageData = class { constructor() { return this; } };
     }
+}
 
-    // 2. Lazy Import
-    // Using require to avoid top-level load which might trigger Vercel build inspection
+async function parsePdfSafe(buffer: Buffer): Promise<string> {
+    applyNodeShims(); // تطبيق الترقيعات داخل الدالة لضمان عدم فشل البناء
+
+    // تحميل المكتبة بشكل متأخر (Lazy Import)
     const pdf = require('pdf-parse');
-
-    // 3. Parse with disabled rendering
     const options = { pagerender: () => "" };
 
     try {
         const data = await pdf(buffer, options);
-        return data.text;
+        return data.text || "";
     } catch (e) {
-        console.error('Inner PDF Parse Lib Error:', e);
-        throw new Error('Failed to parse PDF content');
+        console.error('PDF Parsing Failed:', e);
+        throw new Error('فشل استخراج النص من ملف PDF');
     }
 }
 
@@ -45,65 +44,45 @@ export async function POST(request: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return NextResponse.json({ error: 'غير مصرح لك بالوصول' }, { status: 401 });
     }
 
     try {
         const formData = await request.formData();
         const file = formData.get('file') as File;
 
-        if (!file) {
-            return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+        if (!file || file.type !== 'application/pdf') {
+            return NextResponse.json({ error: 'يرجى رفع ملف PDF صحيح' }, { status: 400 });
         }
 
-        // 1. Buffer the file
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-
-        // 2. Extract Text (Safe Mode)
         const text = await parsePdfSafe(buffer);
 
-        // 3. AI Extract Skills
+        if (!text.trim()) {
+            throw new Error('الملف فارغ أو لا يمكن قراءته');
+        }
+
         const skills = await extractSkillsFromCV(text);
 
-        // 4. Save to DB
-        const { data: existingCV } = await supabase
+        // تحديث أو إدخال البيانات في Supabase
+        const { data: cvData, error: dbError } = await supabase
             .from('cvs')
-            .select('id')
-            .eq('user_id', user.id)
+            .upsert({
+                user_id: user.id,
+                content_text: text,
+                skills_extracted: skills,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' })
+            .select()
             .single();
 
-        let cvData;
-
-        // Define payload for type safety if needed, or use inline
-        const payload = {
-            content_text: text,
-            skills_extracted: skills,
-        };
-
-        if (existingCV) {
-            const { data, error } = await supabase
-                .from('cvs')
-                .update({ ...payload, updated_at: new Date().toISOString() })
-                .eq('id', existingCV.id)
-                .select()
-                .single();
-            if (error) throw error;
-            cvData = data;
-        } else {
-            const { data, error } = await supabase
-                .from('cvs')
-                .insert({ ...payload, user_id: user.id })
-                .select()
-                .single();
-            if (error) throw error;
-            cvData = data;
-        }
+        if (dbError) throw dbError;
 
         return NextResponse.json({ success: true, skills, cvId: cvData.id });
 
     } catch (error: any) {
-        console.error('Upload Error:', error);
+        console.error('API Error:', error.message);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
