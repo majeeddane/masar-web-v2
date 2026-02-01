@@ -73,3 +73,24 @@ export async function triggerScraper() {
         return { success: false, error: e.message };
     }
 }
+
+// 6. Get Applications
+export async function getApplications() {
+    const supabase = getAdminClient();
+
+    // Join with jobs table to get job title
+    const { data, error } = await supabase
+        .from('job_applications')
+        .select(`
+            *,
+            jobs (
+                title
+            )
+        `)
+        .order('created_at', { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    // Transform to flatten structure if needed, or keeping as is
+    return { success: true, data };
+}

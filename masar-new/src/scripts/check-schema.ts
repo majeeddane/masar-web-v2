@@ -16,17 +16,15 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function checkSchema() {
-    console.log('Checking applications table...');
-    const { data: apps, error } = await supabase.from('applications').select('*').limit(1);
+    console.log('Checking job_applications table...');
+    const { data: apps, error } = await supabase.from('job_applications').select('*').limit(1);
 
     if (error) {
-        console.error('Error fetching applications:', error);
+        console.error('Error fetching job_applications:', error.message);
     } else {
+        console.log('job_applications table exists.');
         if (apps.length > 0) {
-            console.log('Applications Columns:', Object.keys(apps[0]));
-        } else {
-            console.log('Applications table is empty, creating a dummy one to check keys? No, just listing empty.');
-            // Insert one to see? No, might violate constraints.
+            console.log('job_applications Columns:', Object.keys(apps[0]));
         }
     }
 
