@@ -12,72 +12,78 @@ import {
     Phone
 } from 'lucide-react';
 import Link from 'next/link';
+import ContactModal from '@/components/ContactModal';
 
 export const dynamic = 'force-dynamic';
 
 // Extended Mock Data
-const talents = [
-    {
-        id: 1,
+{
+    id: 1,
         name: "زياد الخزاعي",
-        role: "مهندس برمجيات",
-        location: "الرياض، السعودية",
-        avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop",
-        about: "مطور برمجيات شغوف لدي خبرة تزيد عن 5 سنوات في بناء تطبيقات الويب الحديثة. أتقن استخدام React و Next.js وأسعى دائماً لتقديم أفضل تجربة مستخدم.",
-        education: [
-            { degree: "بكالوريوس علوم الحاسب", university: "جامعة الملك سعود", year: "2018 - 2022" }
-        ],
-        experience: [
-            { role: "مطور واجهات أمامية", company: "شركة تحكم التقنية", period: "2022 - الآن" },
-            { role: "متدرب تطوير ويب", company: "مسك الخيرية", period: "2021" }
-        ],
-        skills: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Node.js", "PostgreSQL"],
-        stats: {
-            completedProfile: 95,
+            role: "مهندس برمجيات",
+                location: "الرياض، السعودية",
+                    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop",
+                        about: "مطور برمجيات شغوف لدي خبرة تزيد عن 5 سنوات في بناء تطبيقات الويب الحديثة. أتقن استخدام React و Next.js وأسعى دائماً لتقديم أفضل تجربة مستخدم.",
+                            education: [
+                                { degree: "بكالوريوس علوم الحاسب", university: "جامعة الملك سعود", year: "2018 - 2022" }
+                            ],
+                                experience: [
+                                    { role: "مطور واجهات أمامية", company: "شركة تحكم التقنية", period: "2022 - الآن" },
+                                    { role: "متدرب تطوير ويب", company: "مسك الخيرية", period: "2021" }
+                                ],
+                                    skills: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Node.js", "PostgreSQL"],
+                                        stats: {
+        completedProfile: 95,
             responseRate: "100%",
-            quality: "ممتاز"
-        }
+                quality: "ممتاز"
     },
-    {
-        id: 2,
+    email: "ziad@masar.sa",
+        phone: "+966 50 123 4567"
+},
+{
+    id: 2,
         name: "م/ ناصر سليمان",
-        role: "مدير مشاريع",
-        location: "جدة، السعودية",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=400&auto=format&fit=crop",
-        about: "مدير مشاريع معتمد (PMP) بخبرة واسعة في إدارة المشاريع التقنية والتحول الرقمي. ملتزم بتسليم المشاريع في الوقت المحدد وضمن الميزانية.",
-        education: [
-            { degree: "ماجستير إدارة أعمال", university: "جامعة الملك عبدالعزيز", year: "2019 - 2021" }
-        ],
-        experience: [
-            { role: "مدير أول مشاريع", company: "الشركة الوطنية", period: "2020 - الآن" }
-        ],
-        skills: ["PMP", "Agile", "Scrum", "JIRA", "Leadership", "Risk Management"],
-        stats: {
-            completedProfile: 88,
+            role: "مدير مشاريع",
+                location: "جدة، السعودية",
+                    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=400&auto=format&fit=crop",
+                        about: "مدير مشاريع معتمد (PMP) بخبرة واسعة في إدارة المشاريع التقنية والتحول الرقمي. ملتزم بتسليم المشاريع في الوقت المحدد وضمن الميزانية.",
+                            education: [
+                                { degree: "ماجستير إدارة أعمال", university: "جامعة الملك عبدالعزيز", year: "2019 - 2021" }
+                            ],
+                                experience: [
+                                    { role: "مدير أول مشاريع", company: "الشركة الوطنية", period: "2020 - الآن" }
+                                ],
+                                    skills: ["PMP", "Agile", "Scrum", "JIRA", "Leadership", "Risk Management"],
+                                        stats: {
+        completedProfile: 88,
             responseRate: "90%",
-            quality: "ممتاز"
-        }
+                quality: "ممتاز"
     },
-    {
-        id: 3,
+    email: "nasser@masar.sa",
+        phone: "+966 54 987 6543"
+},
+{
+    id: 3,
         name: "محمود عبد الحافظ",
-        role: "مصمم جرافيك",
-        location: "الدمام، السعودية",
-        avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=400&auto=format&fit=crop",
-        about: "مصمم مبدع متخصص في تصميم الهويات البصرية وواجهات المستخدم. أؤمن بأن التصميم هو الجسر بين التكنولوجيا والمستخدم.",
-        education: [
-            { degree: "دبلوم تصميم جرافيك", university: "المعهد التقني", year: "2020" }
-        ],
-        experience: [
-            { role: "مصمم أول", company: "وكالة إبداع", period: "2021 - الآن" }
-        ],
-        skills: ["Photoshop", "Illustrator", "Figma", "Branding", "UI/UX"],
-        stats: {
-            completedProfile: 92,
+            role: "مصمم جرافيك",
+                location: "الدمام، السعودية",
+                    avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=400&auto=format&fit=crop",
+                        about: "مصمم مبدع متخصص في تصميم الهويات البصرية وواجهات المستخدم. أؤمن بأن التصميم هو الجسر بين التكنولوجيا والمستخدم.",
+                            education: [
+                                { degree: "دبلوم تصميم جرافيك", university: "المعهد التقني", year: "2020" }
+                            ],
+                                experience: [
+                                    { role: "مصمم أول", company: "وكالة إبداع", period: "2021 - الآن" }
+                                ],
+                                    skills: ["Photoshop", "Illustrator", "Figma", "Branding", "UI/UX"],
+                                        stats: {
+        completedProfile: 92,
             responseRate: "98%",
-            quality: "ممتاز"
-        }
-    }
+                quality: "ممتاز"
+    },
+    email: "mahmoud@masar.sa",
+        phone: "+966 56 111 2222"
+}
 ];
 
 // Simple Radar Chart Component (SVG)
@@ -149,10 +155,7 @@ export default async function TalentProfilePage(props: PageProps) {
                             </div>
 
                             {/* Action Button */}
-                            <button className="w-full md:w-auto flex items-center justify-center gap-3 bg-[#0084db] hover:bg-blue-600 text-white font-bold py-3.5 px-8 rounded-xl shadow-lg shadow-blue-200 transition-all hover:-translate-y-1">
-                                <Lock className="w-5 h-5" />
-                                <span>فتح الملف لعرض تفاصيل التواصل</span>
-                            </button>
+                            <ContactModal email={talent.email} phone={talent.phone} />
                         </div>
 
                         {/* Chart (Desktop Only) */}
