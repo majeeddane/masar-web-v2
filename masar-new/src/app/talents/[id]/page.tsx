@@ -1,138 +1,78 @@
-import {
-    MapPin,
-    ShieldCheck,
-    Star,
-    Briefcase,
-    GraduationCap,
-    Award,
-    Globe,
-    Lock,
-    CheckCircle2,
-    Mail,
-    Phone
-} from 'lucide-react';
-import Link from 'next/link';
-import ContactModal from '@/components/ContactModal';
+import { createClient } from '@/utils/supabase/server';
+import { notFound } from 'next/navigation';
+import { MapPin, Mail, Phone, ShieldCheck } from 'lucide-react';
+import ContactSection from '@/components/ContactSection';
 
-export const dynamic = 'force-dynamic';
-
-// تم إصلاح تعريف المصفوفة هنا لضمان عمل البناء بنجاح
-const talents = [
-    {
-        id: 1,
-        name: "زياد الخزاعي",
-        role: "مهندس برمجيات",
-        location: "الرياض، السعودية",
-        avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop",
-        about: "مطور برمجيات شغوف لدي خبرة تزيد عن 5 سنوات في بناء تطبيقات الويب الحديثة. أتقن استخدام React و Next.js وأسعى دائماً لتقديم أفضل تجربة مستخدم.",
-        education: [
-            { degree: "بكالوريوس علوم الحاسب", university: "جامعة الملك سعود", year: "2018 - 2022" }
-        ],
-        experience: [
-            { role: "مطور واجهات أمامية", company: "شركة تحكم التقنية", period: "2022 - الآن" },
-            { role: "متدرب تطوير ويب", company: "مسك الخيرية", period: "2021" }
-        ],
-        skills: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Node.js", "PostgreSQL"],
-        stats: {
-            completedProfile: 95,
-            responseRate: "100%",
-            quality: "ممتاز"
-        },
-        email: "ziad@masar.sa",
-        phone: "+966 50 123 4567"
-    },
-    {
-        id: 2,
-        name: "م/ ناصر سليمان",
-        role: "مدير مشاريع",
-        location: "جدة، السعودية",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=400&auto=format&fit=crop",
-        about: "مدير مشاريع معتمد (PMP) بخبرة واسعة في إدارة المشاريع التقنية والتحول الرقمي. ملتزم بتسليم المشاريع في الوقت المحدد وضمن الميزانية.",
-        education: [
-            { degree: "ماجستير إدارة أعمال", university: "جامعة الملك عبدالعزيز", year: "2019 - 2021" }
-        ],
-        experience: [
-            { role: "مدير أول مشاريع", company: "الشركة الوطنية", period: "2020 - الآن" }
-        ],
-        skills: ["PMP", "Agile", "Scrum", "JIRA", "Leadership", "Risk Management"],
-        stats: {
-            completedProfile: 88,
-            responseRate: "90%",
-            quality: "ممتاز"
-        },
-        email: "nasser@masar.sa",
-        phone: "+966 54 987 6543"
-    }
-];
-
-// الرسم البياني (Radar Chart)
-const RadarChart = () => (
-    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md">
-        <polygon points="50,10 90,40 75,85 25,85 10,40" className="fill-blue-50 stroke-blue-200 stroke-[0.5]" />
-        <polygon points="50,25 80,45 70,75 30,75 20,45" className="fill-blue-500/20 stroke-blue-500 stroke-1" />
-        <circle cx="50" cy="10" r="1" className="fill-blue-400" />
-        <circle cx="90" cy="40" r="1" className="fill-blue-400" />
-        <circle cx="75" cy="85" r="1" className="fill-blue-400" />
-        <circle cx="25" cy="85" r="1" className="fill-blue-400" />
-        <circle cx="10" cy="40" r="1" className="fill-blue-400" />
-        <text x="50" y="8" textAnchor="middle" className="text-[4px] fill-gray-500 font-bold">التواجد</text>
-        <text x="95" y="40" textAnchor="start" className="text-[4px] fill-gray-500 font-bold">الخبرة</text>
-        <text x="80" y="90" textAnchor="middle" className="text-[4px] fill-gray-500 font-bold">التعليم</text>
-        <text x="20" y="90" textAnchor="middle" className="text-[4px] fill-gray-500 font-bold">المهارات</text>
-        <text x="5" y="40" textAnchor="end" className="text-[4px] fill-gray-500 font-bold">الجودة</text>
-    </svg>
-);
-
-interface PageProps {
-    params: Promise<{ id: string }>;
-}
-
-export default async function TalentProfilePage(props: PageProps) {
+export default async function TalentProfilePage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
-    const talent = talents.find(t => t.id === parseInt(params.id)) || talents[0];
+    const supabase = await createClient();
+
+    // 1. جلب بيانات المبدع الحقيقية بناءً على المعرف من الرابط
+    const { data: talent, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', params.id)
+        .single();
+
+    // 2. إذا لم نجد المبدع أو حدث خطأ، نظهر صفحة 404
+    if (error || !talent) return notFound();
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans pb-20" dir="rtl">
-            <header className="bg-white border-b border-gray-200">
-                <div className="container mx-auto px-6 py-8">
-                    <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-                        <div className="relative">
-                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-1.5 bg-white border-2 border-blue-100 shadow-lg">
-                                <img src={talent.avatar} alt={talent.name} className="w-full h-full rounded-full object-cover" />
-                            </div>
-                            <div className="absolute bottom-2 right-2 md:bottom-3 md:right-3 w-6 h-6 bg-green-500 border-4 border-white rounded-full"></div>
+        <div className="min-h-screen bg-white py-12 px-6" dir="rtl">
+            <div className="container mx-auto max-w-5xl">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row items-center gap-8 mb-12 border-b pb-12">
+                    <div className="relative">
+                        <img
+                            src={talent.avatar_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop"}
+                            className="w-48 h-48 rounded-full border-4 border-gray-50 object-cover shadow-lg"
+                            alt={talent.full_name}
+                        />
+                        <div className="absolute bottom-4 right-4 w-6 h-6 bg-green-500 border-4 border-white rounded-full"></div>
+                    </div>
+
+                    <div className="flex-1 text-center md:text-right">
+                        <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                            <h1 className="text-4xl font-black text-gray-900">{talent.full_name}</h1>
+                            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                                <ShieldCheck className="w-3 h-3" /> موثق الهوية
+                            </span>
                         </div>
-                        <div className="flex-1 text-center md:text-right">
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-2">
-                                <h1 className="text-3xl font-black text-gray-900">{talent.name}</h1>
-                                <ShieldCheck className="w-6 h-6 text-green-500 fill-green-50" />
-                                <span className="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-100">موثق الهوية</span>
+                        <p className="text-blue-600 font-bold text-xl mb-4">{talent.job_title}</p>
+
+                        <div className="flex flex-wrap justify-center md:justify-start gap-6 text-gray-500 font-bold text-sm">
+                            <div className="flex items-center gap-2">
+                                <MapPin className="w-5 h-5 text-gray-300" /> {talent.location}
                             </div>
-                            <p className="text-xl text-gray-600 font-medium mb-2">{talent.role}</p>
-                            <div className="flex items-center justify-center md:justify-start gap-2 text-gray-500 font-bold text-sm mb-6">
-                                <MapPin className="w-4 h-4" /> {talent.location}
-                                <span className="mx-2 text-gray-300">|</span>
-                                <Globe className="w-4 h-4" /> الجنسية: سعودي
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-300 font-light">|</span> الجنسية: {talent.nationality || 'سعودي'}
                             </div>
-                            {/* تم تمرير talentName لحل مشكلة TypeScript */}
-                            <ContactModal email={talent.email} phone={talent.phone} talentName={talent.name} />
                         </div>
-                        <div className="hidden lg:block w-48 h-48">
-                            <RadarChart />
-                        </div>
+
+                        <ContactSection email={talent.email} phone={talent.phone} />
                     </div>
                 </div>
-            </header>
 
-            <div className="container mx-auto px-6 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 space-y-8">
-                        <section className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
-                            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2"> نبذة عني</h2>
-                            <p className="text-gray-600 leading-loose font-medium">{talent.about}</p>
-                        </section>
+                {/* Bio Section */}
+                <div className="bg-gray-50 rounded-[40px] p-12 mb-8">
+                    <h2 className="text-2xl font-black mb-6 text-gray-900">نبذة عني</h2>
+                    <p className="text-gray-600 leading-relaxed text-lg italic">
+                        "{talent.bio || 'لا توجد نبذة شخصية متاحة حالياً.'}"
+                    </p>
+                </div>
+
+                {/* Skills Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="bg-white border border-gray-100 rounded-[40px] p-10 shadow-sm">
+                        <h2 className="text-xl font-black mb-8 text-gray-900 text-center">المهارات والقدرات</h2>
+                        <div className="flex flex-wrap gap-3 justify-center">
+                            {talent.skills?.map((skill: string, index: number) => (
+                                <span key={index} className="bg-white border border-gray-200 px-5 py-2 rounded-xl text-sm font-bold text-gray-600 shadow-sm">
+                                    {skill}
+                                </span>
+                            ))}
+                        </div>
                     </div>
-                    {/* Sidebar components can go here */}
                 </div>
             </div>
         </div>

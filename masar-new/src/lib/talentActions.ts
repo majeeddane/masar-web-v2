@@ -13,18 +13,23 @@ function getAdminClient() {
 
 export async function joinTalent(formData: FormData) {
     const supabase = getAdminClient();
+    const email = formData.get('email') as string;
+
+    // 1. Fetch existing profile to preserve data (like avatar) if not updated
+    const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('email', email)
+        .single();
 
     const fullName = formData.get('fullName') as string;
     const jobTitle = formData.get('jobTitle') as string;
     const location = formData.get('location') as string;
     const bio = formData.get('bio') as string;
-    const email = formData.get('email') as string;
     const phone = formData.get('phone') as string;
     const skillsString = formData.get('skills') as string;
     const avatarFile = formData.get('avatar') as File;
 
-    // Parse skills (comma separated or JSON string depending on frontend)
-    // We will assume frontend sends a JSON string or we split by comma
     let skills: string[] = [];
     try {
         skills = JSON.parse(skillsString);
@@ -32,9 +37,10 @@ export async function joinTalent(formData: FormData) {
         skills = skillsString ? skillsString.split(',').map(s => s.trim()) : [];
     }
 
-    let avatarUrl = '';
+    // Default: Use existing avatar if available
+    let avatarUrl = existingProfile?.avatar_url || '';
 
-    // 1. Upload Avatar
+    // 2. Upload new avatar ONLY if provided
     if (avatarFile && avatarFile.size > 0) {
         const fileExt = avatarFile.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -47,23 +53,18 @@ export async function joinTalent(formData: FormData) {
                 upsert: false
             });
 
-        if (uploadError) {
-            console.error('Upload Error:', uploadError);
-            return { success: false, error: 'فشل في رفع الصورة الشخصية' };
+        if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+            avatarUrl = publicUrl;
         }
-
-        // Get Public URL
-        const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(filePath);
-
-        avatarUrl = publicUrl;
     }
 
-    // 2. Insert into Profiles
+    // 3. Smart Upsert
     const { error: dbError } = await supabase
         .from('profiles')
-        .insert({
+        .upsert({
             full_name: fullName,
             job_title: jobTitle,
             location: location,
@@ -71,8 +72,8 @@ export async function joinTalent(formData: FormData) {
             email: email,
             phone: phone,
             skills: skills,
-            avatar_url: avatarUrl
-        });
+            avatar_url: avatarUrl // Will retain old url if no new one
+        }, { onConflict: 'email' });
 
     if (dbError) {
         console.error('DB Error:', dbError);
