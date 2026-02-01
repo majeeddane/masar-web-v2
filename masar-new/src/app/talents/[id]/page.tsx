@@ -80,7 +80,7 @@ export default async function TalentProfilePage(props: { params: Promise<{ id: s
                 <div className="mt-12 pt-8 border-t border-dashed border-gray-200 text-center">
                     <p className="text-gray-400 text-sm mb-4 font-bold">هل أنت صاحب هذا الملف؟</p>
                     <Link
-                        href="/talents/join"
+                        href={`/talents/join?id=${talent.id}`}
                         className="inline-flex items-center gap-2 text-[#0084db] hover:underline font-black"
                     >
                         <Edit3 className="w-4 h-4" />
