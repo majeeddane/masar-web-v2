@@ -32,7 +32,7 @@ export default function Navbar() {
         { name: 'الرئيسية', href: '/', icon: LayoutDashboard },
         { name: 'وظائف اليوم', href: '/?date=today', icon: Briefcase }, // Updated to Home with filter
         { name: 'وظائف الأمس', href: '/?date=yesterday', icon: Clock }, // Updated to Home with filter
-        { name: 'المهتمين بالفرص الوظيفية', href: '/dashboard/seeker', icon: HandHelping },
+        { name: 'المهتمين بالفرص الوظيفية', href: '/talents', icon: HandHelping },
         { name: 'الشركات وأصحاب العمل', href: '/dashboard/employer', icon: Building2 },
         { name: 'المدونة', href: '/blog', icon: BookOpen },
     ];

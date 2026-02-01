@@ -101,9 +101,13 @@ export default function TalentsPage() {
                                 </div>
 
                                 {/* Button */}
-                                <button className="w-full bg-[#0084db] hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-blue-100 shadow-lg hover:shadow-xl group-hover:-translate-y-1">
+                                {/* Button */}
+                                <Link
+                                    href={`/talents/${talent.id}`}
+                                    className="w-full flex items-center justify-center bg-[#0084db] hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-blue-100 shadow-lg hover:shadow-xl group-hover:-translate-y-1"
+                                >
                                     الملف الشخصي
-                                </button>
+                                </Link>
 
                             </div>
                         </div>
