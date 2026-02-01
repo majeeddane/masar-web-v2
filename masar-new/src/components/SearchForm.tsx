@@ -4,7 +4,7 @@ import { Search, MapPin } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
-export default function SearchForm() {
+export default function SearchForm({ basePath = '/jobs' }: { basePath?: string }) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -21,7 +21,7 @@ export default function SearchForm() {
         if (jobType) params.set('type', jobType);
         if (experience) params.set('level', experience);
 
-        router.push(`/jobs?${params.toString()}`);
+        router.push(`${basePath}?${params.toString()}`);
     };
 
     return (

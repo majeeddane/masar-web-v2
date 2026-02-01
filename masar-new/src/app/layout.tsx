@@ -15,6 +15,8 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from "@/providers/AuthProvider";
 
+import Navbar from "@/components/Navbar";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,6 +29,7 @@ export default function RootLayout({
         className={`${cairo.variable} font-sans antialiased bg-slate-50 text-slate-900`}
       >
         <AuthProvider>
+          <Navbar />
           {children}
         </AuthProvider>
       </body>

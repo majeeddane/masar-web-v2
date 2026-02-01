@@ -28,12 +28,12 @@ export default function JobCard({ job }: { job: Job }) {
             <div className="flex justify-between items-start mb-4">
                 <div className="flex gap-4 items-start">
                     <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                        <Briefcase className="w-6 h-6" />
+                        <Briefcase className="w-6 h-6" strokeWidth={1.5} />
                     </div>
                     <div>
                         <h3 className="text-xl font-bold text-slate-800 group-hover:text-blue-700 transition-colors line-clamp-1">{job.title}</h3>
                         <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
-                            <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> مؤسسة توظيف</span>
+                            <span className="flex items-center gap-1"><Building2 className="w-3 h-3" strokeWidth={1.5} /> مؤسسة توظيف</span>
                         </div>
                     </div>
                 </div>
@@ -57,8 +57,8 @@ export default function JobCard({ job }: { job: Job }) {
 
             <div className="flex items-center justify-between text-sm text-slate-400 pt-4 border-t border-gray-50">
                 <div className="flex gap-4">
-                    <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {job.city || 'غير محدد'}</span>
-                    <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {new Date(job.created_at).toLocaleDateString('ar-EG')}</span>
+                    <span className="flex items-center gap-1"><MapPin className="w-4 h-4" strokeWidth={1.5} /> {job.city || 'غير محدد'}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-4 h-4" strokeWidth={1.5} /> {new Date(job.created_at).toLocaleDateString('ar-EG')}</span>
                 </div>
                 <span className="text-blue-600 font-bold group-hover:underline">تفاصيل أكثر</span>
             </div>
