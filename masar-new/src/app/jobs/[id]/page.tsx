@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import { Building2, MapPin, Calendar, Briefcase, ExternalLink, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import ApplicationForm from '@/components/ApplicationForm';
 
 // Initialize Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -101,11 +102,16 @@ export default async function JobDetailsPage(props: JobDetailsProps) {
                                         {job.description}
                                     </div>
                                 </section>
+
+                                {/* Application Form */}
+                                <section className="border-t border-gray-100 pt-8 mt-8">
+                                    <ApplicationForm jobId={job.id} />
+                                </section>
                             </div>
 
                             {/* Sidebar / Action Column */}
                             <div className="lg:col-span-1">
-                                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 sticky top-8">
+                                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 sticky top-24">
                                     <h3 className="font-bold text-slate-900 mb-4 text-lg">تفاصيل التقديم</h3>
 
                                     <div className="space-y-4 mb-8">
@@ -124,19 +130,29 @@ export default async function JobDetailsPage(props: JobDetailsProps) {
                                             href={job.source_url}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-blue-200 hover:shadow-xl transition-all hover:-translate-y-1"
+                                            className="w-full flex items-center justify-center gap-2 bg-white border-2 border-slate-200 text-slate-600 hover:border-blue-500 hover:text-blue-600 font-bold py-3 px-6 rounded-xl transition-all"
                                         >
-                                            <span>تقدم للوظيفة الآن</span>
+                                            <span>عرض المصدر الأصلي</span>
                                             <ExternalLink className="w-5 h-5" />
                                         </a>
                                     ) : (
-                                        <button disabled className="w-full bg-slate-200 text-slate-400 font-bold py-4 px-6 rounded-xl cursor-not-allowed">
-                                            الرابط غير متوفر
-                                        </button>
+                                        <div className="text-center text-slate-400 text-sm font-bold">
+                                            التقديم متاح عبر النموذج
+                                        </div>
                                     )}
 
+                                    <div className="mt-4">
+                                        <a
+                                            href="#application-form"
+                                            className="w-full flex items-center justify-center gap-2 bg-[#0084db] hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-blue-200 hover:shadow-xl transition-all hover:-translate-y-1"
+                                        >
+                                            <span>تقدم الآن</span>
+                                            <ArrowRight className="w-5 h-5" />
+                                        </a>
+                                    </div>
+
                                     <p className="text-center text-xs text-slate-400 mt-4 font-medium">
-                                        سيتم تحويلك إلى موقع المصدر للتقديم
+                                        بياناتك محفوظة بشكل آمن ولن يتم مشاركتها إلا مع صاحب العمل
                                     </p>
                                 </div>
                             </div>
