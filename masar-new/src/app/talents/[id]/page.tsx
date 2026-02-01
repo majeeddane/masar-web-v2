@@ -46,7 +46,7 @@ export default async function TalentProfilePage(props: { params: Promise<{ id: s
                                 <MapPin className="w-5 h-5 text-gray-300" /> {talent.location}
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-gray-300 font-light">|</span> الجنسية: {talent.nationality || 'سعودي'}
+                                <span className="text-gray-300 font-light">|</span> الجنسية: {talent.nationality || 'غير محدد'}
                             </div>
                         </div>
 

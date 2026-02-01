@@ -25,7 +25,8 @@ function JoinTalentForm() {
         location: '',
         bio: '',
         email: '',
-        phone: ''
+        phone: '',
+        nationality: ''
     });
 
     // Fetch Data for Editing
@@ -46,7 +47,8 @@ function JoinTalentForm() {
                         location: data.location || '',
                         bio: data.bio || '',
                         email: data.email || '',
-                        phone: data.phone || ''
+                        phone: data.phone || '',
+                        nationality: data.nationality || ''
                     });
 
                     // Handle Skills
@@ -112,6 +114,7 @@ function JoinTalentForm() {
         submitData.append('bio', formData.bio);
         submitData.append('email', formData.email);
         submitData.append('phone', formData.phone);
+        submitData.append('nationality', formData.nationality);
         submitData.append('skills', JSON.stringify(skills));
 
         if (fileInputRef.current?.files?.[0]) {
@@ -214,6 +217,19 @@ function JoinTalentForm() {
                         required
                         placeholder="مثال: الرياض، السعودية"
                         className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all"
+                    />
+                </div>
+
+                {/* حقل الجنسية الجديد */}
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">الجنسية</label>
+                    <input
+                        name="nationality"
+                        required
+                        value={formData.nationality || ''}
+                        onChange={handleInputChange}
+                        placeholder="مثال: سعودي، مصري..."
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#0084db] focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium"
                     />
                 </div>
 

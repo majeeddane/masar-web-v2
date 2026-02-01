@@ -25,6 +25,7 @@ export async function joinTalent(formData: FormData) {
     const fullName = formData.get('fullName') as string;
     const jobTitle = formData.get('jobTitle') as string;
     const location = formData.get('location') as string;
+    const nationality = formData.get('nationality') as string;
     const bio = formData.get('bio') as string;
     const phone = formData.get('phone') as string;
     const skillsString = formData.get('skills') as string;
@@ -68,6 +69,7 @@ export async function joinTalent(formData: FormData) {
             full_name: fullName,
             job_title: jobTitle,
             location: location,
+            nationality: nationality,
             bio: bio,
             email: email,
             phone: phone,
