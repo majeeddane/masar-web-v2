@@ -1,7 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import { MapPin, Mail, Phone, ShieldCheck } from 'lucide-react';
+import { MapPin, Mail, Phone, ShieldCheck, Edit3 } from 'lucide-react';
 import ContactSection from '@/components/ContactSection';
+import Link from 'next/link';
 
 export default async function TalentProfilePage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -73,6 +74,18 @@ export default async function TalentProfilePage(props: { params: Promise<{ id: s
                             ))}
                         </div>
                     </div>
+                </div>
+
+                {/* زر التعديل - يوجه المستخدم لصفحة الانضمام ليقوم بتحديث بياناته */}
+                <div className="mt-12 pt-8 border-t border-dashed border-gray-200 text-center">
+                    <p className="text-gray-400 text-sm mb-4 font-bold">هل أنت صاحب هذا الملف؟</p>
+                    <Link
+                        href="/talents/join"
+                        className="inline-flex items-center gap-2 text-[#0084db] hover:underline font-black"
+                    >
+                        <Edit3 className="w-4 h-4" />
+                        تعديل معلوماتي الشخصية
+                    </Link>
                 </div>
             </div>
         </div>
