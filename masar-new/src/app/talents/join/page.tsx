@@ -28,9 +28,20 @@ export default function JoinTalentPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    // --- تم تعديل هذه الدالة لإضافة فحص الحجم (5 ميجا) ---
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // الحد الأقصى 5 ميجابايت
+            const maxSize = 5 * 1024 * 1024;
+
+            if (file.size > maxSize) {
+                alert('⚠️ حجم الصورة كبير جداً! الحد الأقصى المسموح به هو 5 ميجابايت فقط.');
+                e.target.value = ''; // تفريغ المدخل
+                setAvatarPreview(null);
+                return;
+            }
+
             const objectUrl = URL.createObjectURL(file);
             setAvatarPreview(objectUrl);
         }
@@ -128,7 +139,8 @@ export default function JoinTalentPage() {
                                 accept="image/*"
                                 className="hidden"
                             />
-                            <p className="text-sm text-gray-400">يفضل صورة مربعة عالية الجودة</p>
+                            {/* تم إضافة تنبيه الحجم هنا */}
+                            <p className="text-xs text-gray-400 font-bold">الحد الأقصى للحجم: 5 ميجابايت (JPG/PNG)</p>
                         </div>
 
                         {/* Personal Info */}
