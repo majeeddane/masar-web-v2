@@ -112,7 +112,7 @@ export default function JoinTalentPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-8">
 
-                        {/* Avatar Upload */}
+                        {/* Avatar Upload Section */}
                         <div className="flex flex-col items-center justify-center gap-4">
                             <div
                                 onClick={() => fileInputRef.current?.click()}
@@ -139,7 +139,7 @@ export default function JoinTalentPage() {
                                 accept="image/*"
                                 className="hidden"
                             />
-                            {/* تم إضافة تنبيه الحجم هنا */}
+                            {/* تم إضافة تنبيه الحجم هنا لزيادة وضوح التجربة */}
                             <p className="text-xs text-gray-400 font-bold">الحد الأقصى للحجم: 5 ميجابايت (JPG/PNG)</p>
                         </div>
 
@@ -229,7 +229,7 @@ export default function JoinTalentPage() {
                             </div>
                         </div>
 
-                        {/* Skills */}
+                        {/* Skills Section */}
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-700">المهارات</label>
                             <div className="flex flex-wrap gap-2 p-2 rounded-xl border border-gray-200 min-h-[50px] focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all">
