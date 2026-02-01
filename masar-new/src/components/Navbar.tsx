@@ -13,7 +13,8 @@ import {
     ChevronDown,
     Plus,
     Menu,
-    X
+    X,
+    UserPlus
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -87,6 +88,15 @@ export default function Navbar() {
                     {/* Actions & Mobile Toggle */}
                     <div className="flex items-center gap-4">
 
+                        {/* Join Talent Button */}
+                        <Link
+                            href="/talents/join"
+                            className="hidden sm:flex items-center gap-2 text-blue-600 bg-blue-50 hover:bg-blue-100 px-5 py-3 rounded-xl font-bold transition-all border border-blue-100"
+                        >
+                            <UserPlus className="w-5 h-5" strokeWidth={1.5} />
+                            <span>انضم ككفاءة</span>
+                        </Link>
+
                         {/* Add Job Button */}
                         <Link
                             href="/admin"
@@ -137,7 +147,16 @@ export default function Navbar() {
                                 </Link>
                             );
                         })}
-                        <div className="pt-4 mt-4 border-t border-gray-100">
+                        <div className="pt-4 mt-4 border-t border-gray-100 space-y-3">
+                            <Link
+                                href="/talents/join"
+                                onClick={() => setIsOpen(false)}
+                                className="flex items-center justify-center gap-2 text-blue-600 bg-blue-50 hover:bg-blue-100 px-5 py-3 rounded-xl font-bold w-full border border-blue-100"
+                            >
+                                <UserPlus className="w-5 h-5" strokeWidth={1.5} />
+                                <span>انضم ككفاءة</span>
+                            </Link>
+
                             <Link
                                 href="/admin"
                                 onClick={() => setIsOpen(false)}

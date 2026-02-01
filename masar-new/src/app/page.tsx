@@ -142,6 +142,134 @@ export default async function LandingPage(props: PageProps) {
         </div>
       </section>
 
+      {/* Featured Talents Section */}
+      <section className="py-20 bg-white border-t border-gray-100 relative overflow-hidden">
+        {/* Decorative Background */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gray-50/50 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none"></div>
+
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-gray-900 mb-4">كفاءات مميزة</h2>
+            <p className="text-gray-500 max-w-2xl mx-auto">نخبة من المحترفين الجاهزين للمساعدة في نجاح مشاريعك. تصفح ملفاتهم الشخصية وتواصل معهم مباشرة.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            {/* Mock Data - Ziyad */}
+            <div className="group bg-white rounded-3xl p-8 border border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-xl transition-all relative overflow-hidden text-center">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+
+              <div className="w-24 h-24 mx-auto mb-4 relative">
+                <div className="w-full h-full rounded-full p-1 border border-gray-100 bg-white shadow-sm group-hover:shadow-md transition-shadow">
+                  <img
+                    src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop"
+                    alt="Ziyad"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                </div>
+                <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 mb-1">زياد الخزاعي</h3>
+              <p className="text-blue-600 font-medium text-sm mb-4">مهندس برمجيات</p>
+
+              <div className="flex flex-wrap justify-center gap-2 mb-8">
+                {['React', 'Next.js', 'Node.js'].map((skill) => (
+                  <span key={skill} className="px-3 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-full">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+
+              <Link
+                href="/talents/1"
+                className="block w-full py-3 rounded-xl bg-white border-2 border-blue-50 text-blue-600 font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all"
+              >
+                عرض الملف الكامل
+              </Link>
+            </div>
+
+            {/* Mock Data - Nasser */}
+            <div className="group bg-white rounded-3xl p-8 border border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-xl transition-all relative overflow-hidden text-center">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+
+              <div className="w-24 h-24 mx-auto mb-4 relative">
+                <div className="w-full h-full rounded-full p-1 border border-gray-100 bg-white shadow-sm group-hover:shadow-md transition-shadow">
+                  <img
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&auto=format&fit=crop"
+                    alt="Nasser"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                </div>
+                <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 mb-1">م/ ناصر سليمان</h3>
+              <p className="text-blue-600 font-medium text-sm mb-4">مدير مشاريع</p>
+
+              <div className="flex flex-wrap justify-center gap-2 mb-8">
+                {['PMP', 'Agile', 'Leadership'].map((skill) => (
+                  <span key={skill} className="px-3 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-full">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+
+              <Link
+                href="/talents/2"
+                className="block w-full py-3 rounded-xl bg-white border-2 border-blue-50 text-blue-600 font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all"
+              >
+                عرض الملف الكامل
+              </Link>
+            </div>
+
+            {/* Mock Data - Mahmoud */}
+            <div className="group bg-white rounded-3xl p-8 border border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-xl transition-all relative overflow-hidden text-center">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+
+              <div className="w-24 h-24 mx-auto mb-4 relative">
+                <div className="w-full h-full rounded-full p-1 border border-gray-100 bg-white shadow-sm group-hover:shadow-md transition-shadow">
+                  <img
+                    src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=200&auto=format&fit=crop"
+                    alt="Mahmoud"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                </div>
+                <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 mb-1">محمود عبد الحافظ</h3>
+              <p className="text-blue-600 font-medium text-sm mb-4">مصمم جرافيك</p>
+
+              <div className="flex flex-wrap justify-center gap-2 mb-8">
+                {['Branding', 'UI/UX', 'Figma'].map((skill) => (
+                  <span key={skill} className="px-3 py-1 bg-gray-50 text-gray-600 text-xs font-bold rounded-full">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+
+              <Link
+                href="/talents/3"
+                className="block w-full py-3 rounded-xl bg-white border-2 border-blue-50 text-blue-600 font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all"
+              >
+                عرض الملف الكامل
+              </Link>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/talents"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-[#0084db] hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:shadow-xl transition-all transform hover:-translate-y-1"
+            >
+              <span>استكشاف جميع الكفاءات</span>
+              <ChevronLeft className="w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-12 mt-auto">
         <div className="container mx-auto px-6 text-center">
