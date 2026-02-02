@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabaseClient'; // تأكد من المسار الصحيح للكلاينت
+import { supabase } from '@/lib/supabaseClient'; // ✅ التعديل هنا: استيراد الكائن الجاهز
 import { addExperience, deleteExperience } from '@/lib/experienceActions';
 import { Briefcase, Calendar, MapPin, Plus, Trash2, Loader2, Building2 } from 'lucide-react';
 
@@ -17,23 +17,29 @@ interface Experience {
 }
 
 export default function ExperienceSection({ userId }: { userId: string }) {
-    const supabase = createClient();
+    // ❌ تم حذف السطر: const supabase = createClient();
+    // ✅ نستخدم المتغير supabase المستورد مباشرة
+
     const [experiences, setExperiences] = useState<Experience[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    // جلب الخبرات عند التحميل
+    // ... باقي الكود كما هو تماماً ...
+    // (فقط تأكد أنك تستخدم المتغير `supabase` في دالة fetchExperiences)
+
     const fetchExperiences = async () => {
-        const { data } = await supabase
+        const { data } = await supabase // ✅ يعمل الآن
             .from('experiences')
             .select('*')
             .eq('user_id', userId)
-            .order('start_date', { ascending: false }); // الأحدث أولاً
+            .order('start_date', { ascending: false });
 
         if (data) setExperiences(data);
         setIsLoading(false);
     };
+
+    // ... (باقي الملف بدون تغيير)
 
     useEffect(() => {
         if (userId) fetchExperiences();
@@ -44,8 +50,8 @@ export default function ExperienceSection({ userId }: { userId: string }) {
         setIsSaving(true);
         const res = await addExperience(formData);
         if (res.success) {
-            await fetchExperiences(); // تحديث القائمة
-            setIsAdding(false); // إغلاق النموذج
+            await fetchExperiences();
+            setIsAdding(false);
         } else {
             alert(res.error);
         }
