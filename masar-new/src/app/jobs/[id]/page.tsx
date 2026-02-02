@@ -1,162 +1,101 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
-import { Building2, MapPin, Calendar, Briefcase, ExternalLink, ArrowRight } from 'lucide-react';
+import { MapPin, Building2, Clock, DollarSign, Calendar, Globe, Share2 } from 'lucide-react';
+import ApplyButton from '@/components/ApplyButton';
 import Link from 'next/link';
-import ApplicationForm from '@/components/ApplicationForm';
 
-// Initialize Supabase Client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Force dynamic rendering to ensure fresh data fetch
-export const dynamic = 'force-dynamic';
-
-interface JobDetailsProps {
-    params: Promise<{
-        id: string;
-    }>;
-}
-
-export default async function JobDetailsPage(props: JobDetailsProps) {
+export default async function JobDetailsPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
-    const { id } = params;
+    const supabase = await createClient();
 
-    // Fetch Job Data
+    // 1. جلب تفاصيل الوظيفة
     const { data: job, error } = await supabase
         .from('jobs')
         .select('*')
-        .eq('id', id)
+        .eq('id', params.id)
         .single();
 
-    if (error || !job) {
-        console.error('Job Fetch Error:', error);
-        notFound();
+    if (error || !job) return notFound();
+
+    // 2. التحقق مما إذا كان المستخدم الحالي قد قدم عليها مسبقاً
+    const { data: { user } } = await supabase.auth.getUser();
+    let hasApplied = false;
+
+    if (user) {
+        const { data: application } = await supabase
+            .from('applications')
+            .select('id')
+            .eq('job_id', job.id)
+            .eq('applicant_id', user.id)
+            .single();
+
+        if (application) hasApplied = true;
     }
 
-    // Format Date
-    const formattedDate = new Date(job.posted_at || job.created_at).toLocaleDateString('ar-SA', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-
     return (
-        <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
+        <div className="min-h-screen bg-gray-50 py-12 px-4" dir="rtl">
             <div className="max-w-4xl mx-auto">
 
-                {/* Back Button */}
+                {/* زر العودة */}
                 <div className="mb-6">
-                    <Link href="/dashboard" className="inline-flex items-center text-slate-500 hover:text-blue-600 transition-colors font-bold gap-2">
-                        <ArrowRight className="w-5 h-5" />
-                        عودة للوحة التحكم
+                    <Link href="/jobs" className="text-gray-500 hover:text-[#0084db] font-bold text-sm">
+                        &larr; العودة للوظائف
                     </Link>
                 </div>
 
-                {/* Main Card */}
-                <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
+                {/* رأس الصفحة */}
+                <div className="bg-white rounded-[40px] p-8 md:p-12 shadow-sm border border-gray-100 mb-8">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                        <div>
+                            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-4 leading-tight">
+                                {job.title}
+                            </h1>
+                            <div className="flex flex-wrap gap-4 text-gray-500 font-medium">
+                                <span className="flex items-center gap-1"><Building2 className="w-5 h-5" /> {job.company_name}</span>
+                                <span className="flex items-center gap-1"><MapPin className="w-5 h-5" /> {job.location}</span>
+                                <span className="flex items-center gap-1"><Clock className="w-5 h-5" /> {job.type}</span>
+                            </div>
+                        </div>
+                        <div className="bg-blue-50 text-[#0084db] px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            نُشرت بتاريخ {new Date(job.created_at).toLocaleDateString('ar-SA')}
+                        </div>
+                    </div>
+                </div>
 
-                    {/* Header Section */}
-                    <div className="bg-gradient-to-r from-blue-700 to-blue-900 p-8 sm:p-10 text-white relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-                        <div className="relative z-10">
-                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                                <div>
-                                    <div className="inline-flex items-center gap-2 bg-blue-600/50 border border-blue-400/30 px-3 py-1 rounded-full text-sm font-medium mb-4 backdrop-blur-sm">
-                                        <Briefcase className="w-4 h-4" />
-                                        {job.category || 'عام'}
-                                    </div>
-                                    <h1 className="text-3xl sm:text-4xl font-black mb-4 leading-tight">
-                                        {job.title}
-                                    </h1>
-                                    <div className="flex flex-wrap items-center gap-6 text-blue-100 font-medium text-sm sm:text-base">
-                                        <span className="flex items-center gap-2 bg-blue-800/50 px-3 py-1.5 rounded-lg">
-                                            <Building2 className="w-5 h-5" />
-                                            {job.company || 'شركة غير محددة'}
-                                        </span>
-                                        <span className="flex items-center gap-2 bg-blue-800/50 px-3 py-1.5 rounded-lg">
-                                            <MapPin className="w-5 h-5" />
-                                            {job.city || 'السعودية'}
-                                        </span>
-                                        <span className="flex items-center gap-2 bg-blue-800/50 px-3 py-1.5 rounded-lg">
-                                            <Calendar className="w-5 h-5" />
-                                            {formattedDate}
-                                        </span>
-                                    </div>
-                                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* العمود الأيمن: التفاصيل */}
+                    <div className="md:col-span-2 space-y-8">
+                        <div className="bg-white rounded-[40px] p-8 md:p-10 shadow-sm border border-gray-100">
+                            <h2 className="text-xl font-black text-gray-900 mb-6 border-r-4 border-[#0084db] pr-4">تفاصيل الوظيفة</h2>
+                            <div className="prose prose-blue max-w-none text-gray-600 leading-loose whitespace-pre-wrap">
+                                {job.description}
                             </div>
                         </div>
                     </div>
 
-                    {/* Content Section */}
-                    <div className="p-8 sm:p-10">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-
-                            {/* Description Column */}
-                            <div className="lg:col-span-2 space-y-8">
-                                <section>
-                                    <h2 className="text-xl font-bold text-slate-900 mb-4 border-r-4 border-blue-600 pr-3">
-                                        وصف الوظيفة
-                                    </h2>
-                                    <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">
-                                        {job.description}
-                                    </div>
-                                </section>
-
-                                {/* Application Form */}
-                                <section className="border-t border-gray-100 pt-8 mt-8">
-                                    <ApplicationForm jobId={job.id} />
-                                </section>
-                            </div>
-
-                            {/* Sidebar / Action Column */}
-                            <div className="lg:col-span-1">
-                                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 sticky top-24">
-                                    <h3 className="font-bold text-slate-900 mb-4 text-lg">تفاصيل التقديم</h3>
-
-                                    <div className="space-y-4 mb-8">
-                                        <div className="p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-                                            <div className="text-xs text-slate-400 font-bold mb-1">جهة العمل</div>
-                                            <div className="font-bold text-slate-800">{job.company || 'غير محدد'}</div>
-                                        </div>
-                                        <div className="p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-                                            <div className="text-xs text-slate-400 font-bold mb-1">الموقع</div>
-                                            <div className="font-bold text-slate-800">{job.city || 'السعودية'}</div>
-                                        </div>
-                                    </div>
-
-                                    {job.source_url ? (
-                                        <a
-                                            href={job.source_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="w-full flex items-center justify-center gap-2 bg-white border-2 border-slate-200 text-slate-600 hover:border-blue-500 hover:text-blue-600 font-bold py-3 px-6 rounded-xl transition-all"
-                                        >
-                                            <span>عرض المصدر الأصلي</span>
-                                            <ExternalLink className="w-5 h-5" />
-                                        </a>
-                                    ) : (
-                                        <div className="text-center text-slate-400 text-sm font-bold">
-                                            التقديم متاح عبر النموذج
-                                        </div>
-                                    )}
-
-                                    <div className="mt-4">
-                                        <a
-                                            href="#application-form"
-                                            className="w-full flex items-center justify-center gap-2 bg-[#0084db] hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-blue-200 hover:shadow-xl transition-all hover:-translate-y-1"
-                                        >
-                                            <span>تقدم الآن</span>
-                                            <ArrowRight className="w-5 h-5" />
-                                        </a>
-                                    </div>
-
-                                    <p className="text-center text-xs text-slate-400 mt-4 font-medium">
-                                        بياناتك محفوظة بشكل آمن ولن يتم مشاركتها إلا مع صاحب العمل
-                                    </p>
+                    {/* العمود الأيسر: بطاقة التقديم */}
+                    <div className="md:col-span-1">
+                        <div className="bg-white rounded-[30px] p-6 shadow-lg shadow-blue-50 border border-blue-100 sticky top-24">
+                            <div className="mb-6 pb-6 border-b border-gray-100">
+                                <span className="block text-gray-500 text-sm font-bold mb-1">الراتب المتوقع</span>
+                                <div className="text-2xl font-black text-green-600 flex items-center gap-1">
+                                    <DollarSign className="w-6 h-6" />
+                                    {job.salary_range || 'غير محدد'}
                                 </div>
                             </div>
 
+                            {user ? (
+                                <ApplyButton jobId={job.id} hasApplied={hasApplied} />
+                            ) : (
+                                <Link href="/login" className="block w-full bg-gray-900 text-white font-bold py-4 rounded-xl text-center hover:bg-gray-800 transition-colors">
+                                    سجل دخولك للتقديم
+                                </Link>
+                            )}
+
+                            <p className="text-center text-xs text-gray-400 mt-4">
+                                عند التقديم، سيتم مشاركة ملفك الشخصي في مسار مع صاحب العمل.
+                            </p>
                         </div>
                     </div>
                 </div>

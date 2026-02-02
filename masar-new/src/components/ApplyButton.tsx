@@ -1,81 +1,47 @@
-
 'use client';
 
 import { useState } from 'react';
+import { applyToJob } from '@/lib/jobActions';
+import { Loader2, CheckCircle, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Send, CheckCircle, AlertCircle } from 'lucide-react';
 
-export default function ApplyButton({ jobId, jobTitle, isApplied = false }: { jobId: string, jobTitle: string, isApplied?: boolean }) {
+export default function ApplyButton({ jobId, hasApplied }: { jobId: string, hasApplied: boolean }) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [isApplied, setIsApplied] = useState(hasApplied);
     const router = useRouter();
-    const [loading, setLoading] = useState(false);
-    const [applied, setApplied] = useState(isApplied);
-    const [error, setError] = useState('');
 
-    const handleApply = async () => {
-        setLoading(true);
-        setError('');
+    async function handleApply() {
+        if (!confirm('هل أنت متأكد من رغبتك في التقديم على هذه الوظيفة؟ سيتم إرسال ملفك الشخصي لصاحب العمل.')) return;
 
-        try {
-            const res = await fetch('/api/applications/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ jobId })
-            });
+        setIsLoading(true);
+        const res = await applyToJob(jobId);
 
-            const data = await res.json();
-
-            if (res.ok) {
-                setApplied(true);
-                alert(`تم التقديم بنجاح! نسبة التطابق المبدئية: ${data.score}%`);
-            } else {
-                if (data.error === 'Unauthorized') {
-                    // Redirect to login (assuming we have a login page, probably /login or /auth)
-                    // Since specific login page path isn't confirmed, usually /login
-                    // But using Supabase Auth UI often means /auth/callback or similar.
-                    // For now, alert and push /login
-                    alert('يجب عليك تسجيل الدخول أولاً');
-                    // router.push('/login'); // Uncomment if route exists
-                } else if (data.error.includes('No CV')) {
-                    if (confirm('يجب عليك إنشاء سيرة ذاتية أولاً. الذهاب لبناء السيرة الذاتية؟')) {
-                        router.push('/dashboard/cv');
-                    }
-                } else {
-                    alert(data.error);
-                }
-            }
-        } catch (err) {
-            setError('فشل الاتصال.');
-        } finally {
-            setLoading(false);
+        if (res.success) {
+            setIsApplied(true);
+            alert('تم إرسال طلبك بنجاح! 🎉');
+            router.refresh();
+        } else {
+            alert(res.error);
         }
-    };
+        setIsLoading(false);
+    }
 
-    if (applied) {
+    if (isApplied) {
         return (
-            <button disabled className="bg-green-100 text-green-700 font-bold text-lg px-8 py-4 rounded-xl w-full md:w-auto flex items-center justify-center gap-2 cursor-default">
+            <button disabled className="w-full bg-green-50 text-green-600 font-bold py-4 rounded-xl flex items-center justify-center gap-2 cursor-default border border-green-100">
                 <CheckCircle className="w-5 h-5" />
-                تم التقديم
+                تم التقديم مسبقاً
             </button>
         );
     }
 
     return (
-        <div className="flex flex-col items-center gap-2 w-full md:w-auto">
-            <button
-                onClick={handleApply}
-                disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white font-bold text-lg px-8 py-4 rounded-xl shadow-lg transition-all w-full md:w-auto flex items-center justify-center gap-2"
-            >
-                {loading ? (
-                    'جاري التقديم (AI)...'
-                ) : (
-                    <>
-                        <Send className="w-5 h-5 rtl:-scale-x-100" />
-                        تقديم الآن
-                    </>
-                )}
-            </button>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-        </div>
+        <button
+            onClick={handleApply}
+            disabled={isLoading}
+            className="w-full bg-[#0084db] text-white font-black py-4 rounded-xl hover:bg-[#006bb3] transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2 hover:-translate-y-0.5"
+        >
+            {isLoading ? <Loader2 className="animate-spin" /> : <><Send className="w-5 h-5" /> تقديم الآن</>}
+        </button>
     );
 }

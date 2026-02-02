@@ -2,7 +2,7 @@
 import { checkAdminSession } from '../actions';
 import { redirect } from 'next/navigation';
 import TalentsTable from './TalentsTable';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabaseServer';
 
 export default async function AdminTalentsPage() {
     // 1. Auth Check
