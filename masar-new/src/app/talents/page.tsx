@@ -1,3 +1,4 @@
+import TalentsSearch from '@/components/TalentsSearch';
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
@@ -5,15 +6,32 @@ import { MapPin } from 'lucide-react';
 // إجبار الصفحة على تحديث البيانات باستمرار لضمان ظهور المسجلين الجدد
 export const revalidate = 0;
 
-export default async function TalentsPage() {
+type Props = {
+    searchParams: { [key: string]: string | string[] | undefined }
+};
+
+export default async function TalentsPage({ searchParams }: Props) {
     // 1. استدعاء المحرك الموثوق للاتصال بـ Supabase
     const supabase = await createClient();
 
-    // 2. جلب البيانات من جدول profiles
-    const { data: talents, error } = await supabase
+    const q = typeof searchParams.q === 'string' ? searchParams.q : '';
+    const city = typeof searchParams.city === 'string' ? searchParams.city : '';
+
+    // 2. بناء الاستعلام مع الفلترة
+    let query = supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
+
+    if (q) {
+        query = query.or(`full_name.ilike.%${q}%,job_title.ilike.%${q}%`);
+    }
+
+    if (city) {
+        query = query.ilike('location', `%${city}%`);
+    }
+
+    const { data: talents, error } = await query;
 
     // 3. عرض الخطأ الحقيقي إذا وجد (مهم جداً للتشخيص الآن)
     if (error) {
@@ -32,9 +50,11 @@ export default async function TalentsPage() {
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-6" dir="rtl">
             <div className="container mx-auto">
-                <h1 className="text-4xl font-black text-center mb-16 font-[Cairo] text-gray-900">
+                <h1 className="text-4xl font-black text-center mb-8 font-[Cairo] text-gray-900">
                     استكشاف الكفاءات
                 </h1>
+
+                <TalentsSearch />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {talents && talents.length > 0 ? (

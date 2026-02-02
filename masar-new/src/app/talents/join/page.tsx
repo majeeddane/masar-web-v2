@@ -26,7 +26,8 @@ function JoinTalentForm() {
         bio: '',
         email: '',
         phone: '',
-        nationality: ''
+        nationality: '',
+        cv_url: ''
     });
 
     // Fetch Data for Editing
@@ -48,7 +49,8 @@ function JoinTalentForm() {
                         bio: data.bio || '',
                         email: data.email || '',
                         phone: data.phone || '',
-                        nationality: data.nationality || ''
+                        nationality: data.nationality || '',
+                        cv_url: data.cv_url || ''
                     });
 
                     // Handle Skills
@@ -306,6 +308,30 @@ function JoinTalentForm() {
                             <Plus className="w-5 h-5" />
                         </button>
                     </div>
+                </div>
+
+                {/* CV Upload Section */}
+                <div className="space-y-2 border-t border-dashed pt-6 mt-6">
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                        <svg className="w-5 h-5 text-[#0084db]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        السيرة الذاتية (PDF فقط)
+                    </label>
+
+                    <div className="relative group">
+                        <input
+                            type="file"
+                            name="cv"
+                            accept=".pdf" // Accept PDF only
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
+                        />
+                        {/* Show message if file already exists */}
+                        {formData.cv_url && (
+                            <div className="mt-2 text-xs text-green-600 font-bold flex items-center gap-1">
+                                ✓ يوجد ملف سيرة ذاتية محفوظ مسبقاً (ارفع ملفاً جديداً للتغيير)
+                            </div>
+                        )}
+                    </div>
+                    <p className="text-xs text-gray-400">الحد الأقصى للحجم: 5 ميجابايت</p>
                 </div>
 
                 {/* Submit Button */}

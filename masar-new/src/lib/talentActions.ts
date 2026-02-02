@@ -3,7 +3,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 
-// Use Service Role Key for Admin privileges (bypassing RLS if needed, although policies allow insert)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
@@ -15,10 +14,10 @@ export async function joinTalent(formData: FormData) {
     const supabase = getAdminClient();
     const email = formData.get('email') as string;
 
-    // 1. Fetch existing profile to preserve data (like avatar) if not updated
+    // 1. جلب الملف القديم للحفاظ على البيانات
     const { data: existingProfile } = await supabase
         .from('profiles')
-        .select('avatar_url')
+        .select('avatar_url, cv_url') // <-- لاحظ جلبنا cv_url أيضاً
         .eq('email', email)
         .single();
 
@@ -29,7 +28,10 @@ export async function joinTalent(formData: FormData) {
     const bio = formData.get('bio') as string;
     const phone = formData.get('phone') as string;
     const skillsString = formData.get('skills') as string;
+
+    // استلام الملفات
     const avatarFile = formData.get('avatar') as File;
+    const cvFile = formData.get('cv') as File; // <-- الملف الجديد
 
     let skills: string[] = [];
     try {
@@ -38,31 +40,42 @@ export async function joinTalent(formData: FormData) {
         skills = skillsString ? skillsString.split(',').map(s => s.trim()) : [];
     }
 
-    // Default: Use existing avatar if available
+    // --- منطق الصورة (كما هو) ---
     let avatarUrl = existingProfile?.avatar_url || '';
-
-    // 2. Upload new avatar ONLY if provided
     if (avatarFile && avatarFile.size > 0) {
         const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `public/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, avatarFile, {
-                contentType: avatarFile.type,
-                upsert: false
-            });
-
+        const fileName = `avatar_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, avatarFile, { upsert: false });
         if (!uploadError) {
-            const { data: { publicUrl } } = supabase.storage
-                .from('avatars')
-                .getPublicUrl(filePath);
+            const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
             avatarUrl = publicUrl;
         }
     }
 
-    // 3. Smart Upsert
+    // --- منطق السيرة الذاتية (الجديد) ---
+    let cvUrl = existingProfile?.cv_url || ''; // الاحتفاظ بالقديم افتراضياً
+
+    if (cvFile && cvFile.size > 0) {
+        // التحقق من أن الملف PDF (اختياري لكن مفضل)
+        if (cvFile.type === 'application/pdf') {
+            const fileName = `cv_${Date.now()}_${Math.random().toString(36).substring(7)}.pdf`;
+
+            const { error: uploadCvError } = await supabase.storage
+                .from('resumes') // السلة الجديدة
+                .upload(fileName, cvFile, { contentType: 'application/pdf', upsert: false });
+
+            if (!uploadCvError) {
+                const { data: { publicUrl } } = supabase.storage
+                    .from('resumes')
+                    .getPublicUrl(fileName);
+                cvUrl = publicUrl;
+            } else {
+                console.error('CV Upload Error:', uploadCvError);
+            }
+        }
+    }
+
+    // 3. الحفظ في القاعدة
     const { error: dbError } = await supabase
         .from('profiles')
         .upsert({
@@ -74,11 +87,11 @@ export async function joinTalent(formData: FormData) {
             email: email,
             phone: phone,
             skills: skills,
-            avatar_url: avatarUrl // Will retain old url if no new one
+            avatar_url: avatarUrl,
+            cv_url: cvUrl // <-- حفظ رابط السيرة الذاتية
         }, { onConflict: 'email' });
 
     if (dbError) {
-        console.error('DB Error:', dbError);
         return { success: false, error: 'فشل في حفظ البيانات: ' + dbError.message };
     }
 
