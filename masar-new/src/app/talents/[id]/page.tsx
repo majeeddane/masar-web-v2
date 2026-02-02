@@ -61,7 +61,7 @@ export default async function TalentProfilePage(props: { params: Promise<{ id: s
                                 className="mt-4 w-full md:w-auto inline-flex items-center justify-center gap-2 border-2 border-[#0084db] text-[#0084db] px-8 py-4 rounded-2xl font-black hover:bg-blue-50 transition-all shadow-sm"
                             >
                                 <FileText className="w-5 h-5" />
-                                تحميل السيرة الذاتية (CV)
+                                عرض السيرة الذاتية
                             </a>
                         )}
                     </div>
