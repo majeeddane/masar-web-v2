@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import { MapPin, Mail, Phone, ShieldCheck, Edit3 } from 'lucide-react';
+import { MapPin, Mail, Phone, ShieldCheck, Edit3, FileText } from 'lucide-react';
 import ContactSection from '@/components/ContactSection';
 import Link from 'next/link';
 
@@ -51,6 +51,19 @@ export default async function TalentProfilePage(props: { params: Promise<{ id: s
                         </div>
 
                         <ContactSection email={talent.email} phone={talent.phone} />
+
+                        {/* CV Download Button */}
+                        {talent.cv_url && (
+                            <a
+                                href={talent.cv_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-4 w-full md:w-auto inline-flex items-center justify-center gap-2 border-2 border-[#0084db] text-[#0084db] px-8 py-4 rounded-2xl font-black hover:bg-blue-50 transition-all shadow-sm"
+                            >
+                                <FileText className="w-5 h-5" />
+                                تحميل السيرة الذاتية (CV)
+                            </a>
+                        )}
                     </div>
                 </div>
 
