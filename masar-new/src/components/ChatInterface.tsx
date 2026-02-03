@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { Send, User, Briefcase, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -27,15 +27,26 @@ interface Conversation {
 }
 
 export default function ChatInterface({ currentUser, targetUserId, jobId, conversationId }: ChatInterfaceProps) {
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = useMemo(() => {
+        return createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+    }, []);
+
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [isOtherTyping, setIsOtherTyping] = useState(false);
+
+    const currentUserId = currentUser?.id ?? null;
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Ref to store typing channel
+    const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
     const router = useRouter();
 
     const scrollToBottom = () => {
@@ -44,21 +55,64 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, isOtherTyping]);
+
+    // Typing Indicator Listening (Production Grade)
+    useEffect(() => {
+        if (!conversationId || !currentUserId) return;
+
+        // Cleanup previous channel if exists (safety check)
+        if (typingChannelRef.current) {
+            typingChannelRef.current.unsubscribe();
+            supabase.removeChannel(typingChannelRef.current);
+            typingChannelRef.current = null;
+        }
+
+        const channel = supabase.channel(`typing:${conversationId}`);
+        typingChannelRef.current = channel;
+
+        channel
+            .on('broadcast', { event: 'typing' }, ({ payload }) => {
+                // Ignore my own typing
+                if (!payload?.userId || payload.userId === currentUserId) return;
+
+                console.log("typing received", conversationId);
+                setIsOtherTyping(true);
+
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => {
+                    setIsOtherTyping(false);
+                }, 2000);
+            })
+            .subscribe();
+
+        return () => {
+            // Cleanup on unmount or conversation change
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
+            setIsOtherTyping(false);
+
+            // cleanup THIS channel specifically
+            channel.unsubscribe();
+            supabase.removeChannel(channel);
+
+            if (typingChannelRef.current === channel) {
+                typingChannelRef.current = null;
+            }
+        };
+    }, [conversationId, currentUserId, supabase]);
 
     // 1. Initialize Conversation
     useEffect(() => {
         async function initChat() {
-            if (!currentUser) return;
+            if (!currentUserId) return;
 
             // If we have a conversationId (from list click), fetch it directly
             if (conversationId) {
+                // Optimistic Mark as Read
+                supabase.rpc('mark_conversation_read', { p_conversation_id: conversationId });
+
                 setIsLoading(true);
-                // 1. Mark as read
-                try {
-                    console.log("mark_read (ChatInterface)", conversationId);
-                    await supabase.rpc('mark_conversation_read', { p_conversation_id: conversationId });
-                } catch (e) { console.error("Error marking read", e); } // Non-blocking
 
                 // 2. Fetch details
                 const { data: conv, error } = await supabase
@@ -69,7 +123,7 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
 
                 if (conv) {
                     setConversation(conv);
-                    fetchMessages(conv.id);
+                    fetchMessages(conv.id, { initial: true });
                 } else {
                     console.error("Conversation not found", error);
                     setIsLoading(false);
@@ -88,7 +142,7 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
             // Check for existing conversation with targetUser
             setIsLoading(true);
             let query = supabase.from('conversations').select('*')
-                .or(`and(user1_id.eq.${currentUser.id},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${currentUser.id})`);
+                .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${currentUserId})`);
 
             if (jobId) {
                 query = query.eq('job_id', jobId);
@@ -98,24 +152,20 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
 
             if (convs && convs.length > 0) {
                 setConversation(convs[0]);
-                fetchMessages(convs[0].id);
-                // Also mark as read here? logic says yes if opening.
-                await supabase.rpc('mark_conversation_read', { p_conversation_id: convs[0].id });
+                fetchMessages(convs[0].id, { initial: true });
+                // Optimistic Mark as Read
+                supabase.rpc('mark_conversation_read', { p_conversation_id: convs[0].id });
             } else {
                 // Determine if we should create one.
-                // If we are here because of ?to=... query param, we initiate.
-                // Create new conversation
-                // To avoid duplicate key error race conditions, we attempt insert.
-                // Ideally we handle this robustly, but for MVP:
                 const { data: newConv, error: createError } = await supabase.from('conversations').insert({
-                    user1_id: currentUser.id,
+                    user1_id: currentUserId,
                     user2_id: targetUserId,
                     job_id: jobId || null
                 }).select().single();
 
                 if (newConv) {
                     setConversation(newConv);
-                    fetchMessages(newConv.id);
+                    fetchMessages(newConv.id, { initial: true });
                 } else if (createError) {
                     // Possible conflict or other error
                     console.error("Error creating conversation:", createError);
@@ -125,10 +175,13 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
         }
 
         initChat();
-    }, [currentUser, targetUserId, jobId, conversationId, supabase]);
+    }, [conversationId, currentUserId, targetUserId, jobId, supabase]);
 
+    // ... fetchMessages ...
     // 2. Fetch Messages
-    async function fetchMessages(convId: string) {
+    async function fetchMessages(convId: string, opts?: { initial?: boolean }) {
+        if (opts?.initial) setIsLoading(true);
+
         const { data, error } = await supabase
             .from('messages')
             .select('*')
@@ -136,37 +189,58 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
             .order('created_at', { ascending: true })
             .limit(50);
 
-        if (data) {
-            setMessages(data);
-            setIsLoading(false);
-        }
+        if (error) console.error('fetchMessages error:', error);
+
+        setMessages(data ?? []);
+
+        if (opts?.initial) setIsLoading(false);
     }
 
-    // 3. Realtime Subscription (Optional for MVP, but requested "Messaging behavior")
-    // "Insert new message, then refresh list (simple refetch ok)" -> Simple refetch is acceptable.
-    // We will setup simple refetch on send.
-
+    // 3. Realtime Subscription (Optional for MVP)
     async function handleSend(e: React.FormEvent) {
         e.preventDefault();
-        if (!newMessage.trim() || !conversation) return;
+
+        if (!newMessage.trim() || !conversationId || !currentUserId) return;
+
+        if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
 
         const content = newMessage.trim();
-        setNewMessage(''); // Optimistic clear
+        setNewMessage('');
 
         const { error } = await supabase.from('messages').insert({
-            conversation_id: conversation.id,
-            sender_id: currentUser.id,
-            content: content
+            conversation_id: conversationId,
+            sender_id: currentUserId,
+            content,
         });
 
         if (error) {
-            console.error("Failed to send:", error);
-            // Ideally restore message to input or show error
-        } else {
-            // Refresh
-            fetchMessages(conversation.id);
+            console.error('Failed to send:', error);
+            // optionally: setNewMessage(content);
+            return;
         }
+
+        fetchMessages(conversationId); // No loading spinner
     }
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setNewMessage(val);
+
+        if (!conversationId || !currentUserId) return;
+
+        // Broadcast typing event (Debounced) using the EXISTING channel ref
+        if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
+
+        typingDebounceRef.current = setTimeout(() => {
+            if (typingChannelRef.current) {
+                typingChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'typing',
+                    payload: { userId: currentUserId, ts: Date.now() },
+                });
+            }
+        }, 250);
+    };
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-full min-h-[400px]"><Loader2 className="animate-spin text-gray-400" /></div>;
@@ -223,6 +297,19 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
                         );
                     })
                 )}
+
+                {/* Typing Indicator */}
+                {isOtherTyping && (
+                    <div className="flex justify-start animate-pulse">
+                        <div className="bg-gray-100 border border-gray-200 text-gray-500 text-xs px-3 py-2 rounded-xl rounded-tr-none flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                            <span className="mr-1">يكتب الآن...</span>
+                        </div>
+                    </div>
+                )}
+
                 <div ref={messagesEndRef} />
             </div>
 
@@ -231,7 +318,7 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
                 <input
                     type="text"
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={handleChange}
                     placeholder="اكتب رسالتك هنا..."
                     className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#0084db] transition-colors text-right"
                     dir="rtl"
