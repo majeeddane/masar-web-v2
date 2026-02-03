@@ -1,9 +1,9 @@
-
 import Link from 'next/link';
-import { Briefcase, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Briefcase, ChevronLeft, ChevronRight, Search, LayoutGrid } from 'lucide-react';
 import SearchForm from '@/components/SearchForm';
 import { getJobs } from '@/lib/jobs';
 import JobCard from '@/components/JobCard';
+import CategoriesGrid from '@/components/CategoriesGrid';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +67,22 @@ export default async function LandingPage(props: PageProps) {
           </p>
         </div>
       </header>
+
+      {/* Categories Grid (New) */}
+      <section className="container mx-auto px-4 relative z-20 -mt-10 mb-12">
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <LayoutGrid className="w-5 h-5 text-blue-600" />
+            تصفح حسب التخصص
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            {/* We will fetch categories dynamically later, or assume known IDs for now if DB fetch fails? 
+                    Actually, we are in Server Component, let's fetch them! 
+                */}
+            <CategoriesGrid />
+          </div>
+        </div>
+      </section>
 
       {/* Search Bar (Floating) */}
       <div className="container mx-auto px-4 relative z-20 -mt-24">

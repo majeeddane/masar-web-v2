@@ -6,16 +6,17 @@ import { MapPin } from 'lucide-react';
 // إجبار الصفحة على تحديث البيانات باستمرار لضمان ظهور المسجلين الجدد
 export const revalidate = 0;
 
-type Props = {
-    searchParams: { [key: string]: string | string[] | undefined }
-};
-
-export default async function TalentsPage({ searchParams }: Props) {
+export default async function TalentsPage({
+    searchParams,
+}: {
+    searchParams: { q?: string; city?: string };
+}) {
     // 1. استدعاء المحرك الموثوق للاتصال بـ Supabase
     const supabase = await createClient();
 
-    const q = typeof searchParams.q === 'string' ? searchParams.q : '';
-    const city = typeof searchParams.city === 'string' ? searchParams.city : '';
+    const { q: qParam, city: cityParam } = await searchParams;
+    const q = typeof qParam === 'string' ? qParam : '';
+    const city = typeof cityParam === 'string' ? cityParam : '';
 
     // 2. بناء الاستعلام مع الفلترة
     let query = supabase

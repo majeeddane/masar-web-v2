@@ -5,6 +5,12 @@ import { supabase } from '@/lib/supabaseClient'; // ✅ التعديل هنا: �
 import { addExperience, deleteExperience } from '@/lib/experienceActions';
 import { Briefcase, Calendar, MapPin, Plus, Trash2, Loader2, Building2 } from 'lucide-react';
 
+declare global {
+    interface Window {
+        expFormRef: HTMLDivElement | null;
+    }
+}
+
 interface Experience {
     id: string;
     title: string;
@@ -84,7 +90,7 @@ export default function ExperienceSection({ userId }: { userId: string }) {
 
             {/* --- نموذج الإضافة --- */}
             {isAdding && (
-                <form action={handleAdd} className="bg-gray-50 p-6 rounded-2xl border border-gray-200 animate-in slide-in-from-top-4 duration-300">
+                <div ref={(el) => { if (el) window.expFormRef = el; }} className="bg-gray-50 p-6 rounded-2xl border border-gray-200 animate-in slide-in-from-top-4 duration-300">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <input name="title" required placeholder="المسمى الوظيفي" className="px-4 py-2 rounded-xl border border-gray-200 focus:border-[#0084db] outline-none" />
                         <input name="company" required placeholder="اسم الشركة" className="px-4 py-2 rounded-xl border border-gray-200 focus:border-[#0084db] outline-none" />
@@ -108,12 +114,30 @@ export default function ExperienceSection({ userId }: { userId: string }) {
                     <textarea name="description" rows={3} placeholder="وصف موجز للمهام والإنجازات..." className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-[#0084db] outline-none mb-4 resize-none" />
 
                     <div className="flex gap-2">
-                        <button type="submit" disabled={isSaving} className="bg-[#0084db] text-white px-6 py-2 rounded-xl font-bold text-sm flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                const container = window.expFormRef;
+                                if (!container) return;
+                                const formData = new FormData();
+                                const inputs = container.querySelectorAll('input, textarea');
+                                inputs.forEach((input: any) => {
+                                    if (input.type === 'checkbox') {
+                                        if (input.checked) formData.append(input.name, 'on');
+                                    } else {
+                                        formData.append(input.name, input.value);
+                                    }
+                                });
+                                await handleAdd(formData);
+                            }}
+                            disabled={isSaving}
+                            className="bg-[#0084db] text-white px-6 py-2 rounded-xl font-bold text-sm flex items-center gap-2"
+                        >
                             {isSaving && <Loader2 className="w-4 h-4 animate-spin" />} حفظ
                         </button>
                         <button type="button" onClick={() => setIsAdding(false)} className="bg-gray-200 text-gray-600 px-6 py-2 rounded-xl font-bold text-sm">إلغاء</button>
                     </div>
-                </form>
+                </div>
             )}
 
             {/* --- قائمة الخبرات (Timeline) --- */}

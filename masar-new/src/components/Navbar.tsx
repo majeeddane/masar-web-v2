@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabaseServer';
 import LogoutButton from './LogoutButton';
-import { User, Briefcase, LayoutDashboard } from 'lucide-react';
+import { User, Briefcase, LayoutDashboard, MessageCircle } from 'lucide-react';
+import UnreadBadge from './UnreadBadge';
 
 export default async function Navbar() {
     const supabase = await createClient();
@@ -44,6 +45,18 @@ export default async function Navbar() {
                                 >
                                     <LayoutDashboard className="w-4 h-4" />
                                     لوحة التحكم
+                                </Link>
+
+                                <Link
+                                    href="/messages"
+                                    className="hidden md:flex items-center gap-2 text-gray-700 font-bold hover:text-[#0084db] transition-colors bg-gray-50 px-3 py-2 rounded-lg relative"
+                                    title="الرسائل"
+                                >
+                                    <div className="relative">
+                                        <MessageCircle className="w-4 h-4" />
+                                        <UnreadBadge />
+                                    </div>
+                                    المحادثات
                                 </Link>
 
                                 <Link
