@@ -9,6 +9,7 @@ interface ChatInterfaceProps {
     currentUser: any;
     targetUserId?: string;
     jobId?: string;
+    conversationId?: string;
 }
 
 interface Message {
@@ -25,7 +26,7 @@ interface Conversation {
     job_id?: string;
 }
 
-export default function ChatInterface({ currentUser, targetUserId, jobId }: ChatInterfaceProps) {
+export default function ChatInterface({ currentUser, targetUserId, jobId, conversationId }: ChatInterfaceProps) {
     const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -48,15 +49,44 @@ export default function ChatInterface({ currentUser, targetUserId, jobId }: Chat
     // 1. Initialize Conversation
     useEffect(() => {
         async function initChat() {
-            if (!currentUser || !targetUserId) {
-                setIsLoading(false);
+            if (!currentUser) return;
+
+            // If we have a conversationId (from list click), fetch it directly
+            if (conversationId) {
+                setIsLoading(true);
+                // 1. Mark as read
+                try {
+                    console.log("mark_read (ChatInterface)", conversationId);
+                    await supabase.rpc('mark_conversation_read', { p_conversation_id: conversationId });
+                } catch (e) { console.error("Error marking read", e); } // Non-blocking
+
+                // 2. Fetch details
+                const { data: conv, error } = await supabase
+                    .from('conversations')
+                    .select('*')
+                    .eq('id', conversationId)
+                    .single();
+
+                if (conv) {
+                    setConversation(conv);
+                    fetchMessages(conv.id);
+                } else {
+                    console.error("Conversation not found", error);
+                    setIsLoading(false);
+                }
                 return;
             }
 
-            // Check for existing conversation
-            // We need to check both (user1=me, user2=target) AND (user1=target, user2=me)
-            // But for simplicity of query, we can use OR logic or just check both combinations.
+            // Fallback: If no conversationId but we have targetUserId (from "Execute" or "Contact" buttons)
+            if (!targetUserId) {
+                setIsLoading(false);
+                setConversation(null);
+                setMessages([]);
+                return;
+            }
 
+            // Check for existing conversation with targetUser
+            setIsLoading(true);
             let query = supabase.from('conversations').select('*')
                 .or(`and(user1_id.eq.${currentUser.id},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${currentUser.id})`);
 
@@ -69,6 +99,8 @@ export default function ChatInterface({ currentUser, targetUserId, jobId }: Chat
             if (convs && convs.length > 0) {
                 setConversation(convs[0]);
                 fetchMessages(convs[0].id);
+                // Also mark as read here? logic says yes if opening.
+                await supabase.rpc('mark_conversation_read', { p_conversation_id: convs[0].id });
             } else {
                 // Determine if we should create one.
                 // If we are here because of ?to=... query param, we initiate.
@@ -83,18 +115,17 @@ export default function ChatInterface({ currentUser, targetUserId, jobId }: Chat
 
                 if (newConv) {
                     setConversation(newConv);
+                    fetchMessages(newConv.id);
                 } else if (createError) {
                     // Possible conflict or other error
                     console.error("Error creating conversation:", createError);
-                    // It might exist now (race condition), try fetching again?
-                    // For MVP, just show error or retry.
                 }
             }
             setIsLoading(false);
         }
 
         initChat();
-    }, [currentUser, targetUserId, jobId, supabase]);
+    }, [currentUser, targetUserId, jobId, conversationId, supabase]);
 
     // 2. Fetch Messages
     async function fetchMessages(convId: string) {
@@ -107,6 +138,7 @@ export default function ChatInterface({ currentUser, targetUserId, jobId }: Chat
 
         if (data) {
             setMessages(data);
+            setIsLoading(false);
         }
     }
 
@@ -137,11 +169,19 @@ export default function ChatInterface({ currentUser, targetUserId, jobId }: Chat
     }
 
     if (isLoading) {
-        return <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin text-gray-400" /></div>;
+        return <div className="flex justify-center items-center h-full min-h-[400px]"><Loader2 className="animate-spin text-gray-400" /></div>;
     }
 
-    if (!targetUserId && !conversation) {
-        return <div className="text-center p-8 text-gray-500">اختر محادثة للبدء</div>;
+    if (!conversation) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full min-h-[500px] text-gray-400 p-8 space-y-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+                    <User className="w-8 h-8 opacity-50" />
+                </div>
+                <p className="text-lg font-medium">اختر محادثة من القائمة للبدء</p>
+                <p className="text-sm opacity-75">يمكنك التواصل مع المواهب والشركات مباشرة هنا.</p>
+            </div>
+        );
     }
 
     return (
@@ -160,7 +200,7 @@ export default function ChatInterface({ currentUser, targetUserId, jobId }: Chat
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f8faff]">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f8faff] min-h-0">
                 {messages.length === 0 ? (
                     <div className="text-center text-gray-400 mt-12 text-sm">
                         لا توجد رسائل بعد. ابدأ المحادثة الآن!
@@ -171,8 +211,8 @@ export default function ChatInterface({ currentUser, targetUserId, jobId }: Chat
                         return (
                             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[70%] p-3 rounded-2xl text-sm leading-relaxed ${isMe
-                                        ? 'bg-[#0084db] text-white rounded-tl-none'
-                                        : 'bg-white border border-gray-100 text-gray-700 rounded-tr-none shadow-sm'
+                                    ? 'bg-[#0084db] text-white rounded-tl-none'
+                                    : 'bg-white border border-gray-100 text-gray-700 rounded-tr-none shadow-sm'
                                     }`}>
                                     {msg.content}
                                     <div className={`text-[10px] mt-1 opacity-70 ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>
@@ -187,7 +227,7 @@ export default function ChatInterface({ currentUser, targetUserId, jobId }: Chat
             </div>
 
             {/* Input Area */}
-            <form onSubmit={handleSend} className="p-4 bg-white border-t border-gray-100 flex gap-2">
+            <form onSubmit={handleSend} className="p-4 bg-white border-t border-gray-100 flex gap-2 shrink-0">
                 <input
                     type="text"
                     value={newMessage}
@@ -201,7 +241,7 @@ export default function ChatInterface({ currentUser, targetUserId, jobId }: Chat
                     disabled={!newMessage.trim()}
                     className="bg-[#0084db] text-white p-3 rounded-xl hover:bg-[#006bb3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <Send className="w-5 h-5 ltr:rotate-180" /> {/* Rotate if needed for RTL feel, usually Send icon points right which is out in RTL? Left? Lucide send points right. In RTL right is 'back'. We want it to point Left? Actually standard is send icon points direction of reading flow usually or just generic paper plane. */}
+                    <Send className="w-5 h-5 ltr:rotate-180" />
                 </button>
             </form>
         </div>

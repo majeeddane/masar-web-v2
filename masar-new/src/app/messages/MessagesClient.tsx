@@ -22,6 +22,13 @@ export default function MessagesClient() {
 
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedConversationId, setSelectedConversationId] = useState<string | null>(c);
+
+    useEffect(() => {
+        if (c) {
+            setSelectedConversationId(c);
+        }
+    }, [c]);
 
     useEffect(() => {
         async function checkAuth() {
@@ -35,6 +42,10 @@ export default function MessagesClient() {
         }
         checkAuth();
     }, [router, supabase]);
+
+    const handleSelectConversation = (id: string) => {
+        setSelectedConversationId(id);
+    };
 
     if (loading) {
         return (
@@ -52,17 +63,21 @@ export default function MessagesClient() {
                 <div className="flex h-full gap-6 bg-white rounded-[30px] border border-gray-100 shadow-sm overflow-hidden p-1">
 
                     {/* Sidebar: Conversations List */}
-                    <div className={`w-full md:w-[350px] lg:w-[400px] flex-shrink-0 border-l border-gray-100 bg-white ${c ? 'hidden md:block' : 'block'}`}>
-                        <ConversationsList currentUser={user} selectedId={c || undefined} />
+                    <div className={`w-full md:w-[350px] lg:w-[400px] flex-shrink-0 border-l border-gray-100 bg-white ${selectedConversationId ? 'hidden md:block' : 'block'}`}>
+                        <ConversationsList
+                            currentUser={user}
+                            selectedId={selectedConversationId || undefined}
+                            onSelectConversation={handleSelectConversation}
+                        />
                     </div>
 
                     {/* Main: Chat Thread */}
-                    <div className={`flex-1 flex flex-col bg-[#f8faff] md:rounded-[25px] overflow-hidden ${!c && !to ? 'hidden md:flex' : 'flex'}`}>
+                    <div className={`flex-1 flex flex-col bg-[#f8faff] md:rounded-[25px] overflow-hidden ${!selectedConversationId && !to ? 'hidden md:flex' : 'flex'}`}>
                         <ChatInterface
                             currentUser={user}
                             targetUserId={to || undefined}
                             jobId={job || undefined}
-                            conversationId={c || undefined}
+                            conversationId={selectedConversationId || undefined}
                         />
                     </div>
 

@@ -24,11 +24,12 @@ interface ConversationsListProps {
     selectedId?: string;
 }
 
-export default function ConversationsList({ currentUser, selectedId }: ConversationsListProps) {
+export default function ConversationsList({ currentUser, selectedId, onSelectConversation }: ConversationsListProps & { onSelectConversation?: (id: string) => void }) {
     const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
+    const router = useRouter();
     const [conversations, setConversations] = useState<InboxItem[]>([]);
     const [filter, setFilter] = useState<'all' | 'unread'>('all');
     const [search, setSearch] = useState('');
@@ -67,6 +68,32 @@ export default function ConversationsList({ currentUser, selectedId }: Conversat
         const matchesFilter = filter === 'all' || (c.unread_count > 0);
         return matchesSearch && matchesFilter;
     });
+
+    const handleItemClick = async (conversationId: string) => {
+        // 1. Optimistic Update: Clear unread count locally immediately
+        setConversations(prev => prev.map(c =>
+            c.conversation_id === conversationId ? { ...c, unread_count: 0 } : c
+        ));
+
+        // 2. RPC Call: Mark as read in DB
+        try {
+            console.log("mark_read", conversationId);
+            const { error } = await supabase.rpc('mark_conversation_read', {
+                p_conversation_id: conversationId
+            });
+
+            if (error) {
+                console.error("Error marking read:", error);
+            }
+        } catch (err) {
+            console.error("Exception marking read:", err);
+        }
+
+        if (onSelectConversation) {
+            onSelectConversation(conversationId);
+        }
+        router.push(`/messages?c=${conversationId}`);
+    };
 
     if (isLoading) {
         return (
@@ -121,10 +148,11 @@ export default function ConversationsList({ currentUser, selectedId }: Conversat
                 {filtered.map(item => {
                     const isSelected = selectedId === item.conversation_id;
                     return (
-                        <Link
+                        <div
+                            role="button"
                             key={item.conversation_id}
-                            href={`/messages?c=${item.conversation_id}`}
-                            className={`block p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50/60 border-blue-100' : ''}`}
+                            onClick={() => handleItemClick(item.conversation_id)}
+                            className={`block p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer text-right ${isSelected ? 'bg-blue-50/60 border-blue-100' : ''}`}
                         >
                             <div className="flex gap-3">
                                 <div className="relative">
@@ -153,7 +181,7 @@ export default function ConversationsList({ currentUser, selectedId }: Conversat
                                     </p>
                                 </div>
                             </div>
-                        </Link>
+                        </div>
                     );
                 })}
             </div>
