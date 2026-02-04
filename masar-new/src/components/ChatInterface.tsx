@@ -9,7 +9,6 @@ interface ChatInterfaceProps {
     currentUser: any;
     targetUserId?: string;
     jobId?: string;
-    conversationId?: string;
 }
 
 interface Message {
@@ -26,27 +25,16 @@ interface Conversation {
     job_id?: string;
 }
 
-export default function ChatInterface({ currentUser, targetUserId, jobId, conversationId }: ChatInterfaceProps) {
-    const supabase = useMemo(() => {
-        return createBrowserClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-    }, []);
-
+export default function ChatInterface({ currentUser, targetUserId, jobId }: ChatInterfaceProps) {
+    const supabase = useMemo(() => createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    ), []);
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [isOtherTyping, setIsOtherTyping] = useState(false);
-
-    const currentUserId = currentUser?.id ?? null;
-
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    // Ref to store typing channel
-    const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
     const router = useRouter();
 
     const scrollToBottom = () => {
@@ -55,94 +43,22 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, isOtherTyping]);
-
-    // Typing Indicator Listening (Production Grade)
-    useEffect(() => {
-        if (!conversationId || !currentUserId) return;
-
-        // Cleanup previous channel if exists (safety check)
-        if (typingChannelRef.current) {
-            typingChannelRef.current.unsubscribe();
-            supabase.removeChannel(typingChannelRef.current);
-            typingChannelRef.current = null;
-        }
-
-        const channel = supabase.channel(`typing:${conversationId}`);
-        typingChannelRef.current = channel;
-
-        channel
-            .on('broadcast', { event: 'typing' }, ({ payload }) => {
-                // Ignore my own typing
-                if (!payload?.userId || payload.userId === currentUserId) return;
-
-                console.log("typing received", conversationId);
-                setIsOtherTyping(true);
-
-                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                typingTimeoutRef.current = setTimeout(() => {
-                    setIsOtherTyping(false);
-                }, 2000);
-            })
-            .subscribe();
-
-        return () => {
-            // Cleanup on unmount or conversation change
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-            if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
-            setIsOtherTyping(false);
-
-            // cleanup THIS channel specifically
-            channel.unsubscribe();
-            supabase.removeChannel(channel);
-
-            if (typingChannelRef.current === channel) {
-                typingChannelRef.current = null;
-            }
-        };
-    }, [conversationId, currentUserId, supabase]);
+    }, [messages]);
 
     // 1. Initialize Conversation
     useEffect(() => {
         async function initChat() {
-            if (!currentUserId) return;
-
-            // If we have a conversationId (from list click), fetch it directly
-            if (conversationId) {
-                // Optimistic Mark as Read
-                supabase.rpc('mark_conversation_read', { p_conversation_id: conversationId });
-
-                setIsLoading(true);
-
-                // 2. Fetch details
-                const { data: conv, error } = await supabase
-                    .from('conversations')
-                    .select('*')
-                    .eq('id', conversationId)
-                    .single();
-
-                if (conv) {
-                    setConversation(conv);
-                    fetchMessages(conv.id, { initial: true });
-                } else {
-                    console.error("Conversation not found", error);
-                    setIsLoading(false);
-                }
-                return;
-            }
-
-            // Fallback: If no conversationId but we have targetUserId (from "Execute" or "Contact" buttons)
-            if (!targetUserId) {
+            if (!currentUser || !targetUserId) {
                 setIsLoading(false);
-                setConversation(null);
-                setMessages([]);
                 return;
             }
 
-            // Check for existing conversation with targetUser
-            setIsLoading(true);
+            // Check for existing conversation
+            // We need to check both (user1=me, user2=target) AND (user1=target, user2=me)
+            // But for simplicity of query, we can use OR logic or just check both combinations.
+
             let query = supabase.from('conversations').select('*')
-                .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${currentUserId})`);
+                .or(`and(user1_id.eq.${currentUser.id},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${currentUser.id})`);
 
             if (jobId) {
                 query = query.eq('job_id', jobId);
@@ -152,36 +68,36 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
 
             if (convs && convs.length > 0) {
                 setConversation(convs[0]);
-                fetchMessages(convs[0].id, { initial: true });
-                // Optimistic Mark as Read
-                supabase.rpc('mark_conversation_read', { p_conversation_id: convs[0].id });
+                fetchMessages(convs[0].id);
             } else {
                 // Determine if we should create one.
+                // If we are here because of ?to=... query param, we initiate.
+                // Create new conversation
+                // To avoid duplicate key error race conditions, we attempt insert.
+                // Ideally we handle this robustly, but for MVP:
                 const { data: newConv, error: createError } = await supabase.from('conversations').insert({
-                    user1_id: currentUserId,
+                    user1_id: currentUser.id,
                     user2_id: targetUserId,
                     job_id: jobId || null
                 }).select().single();
 
                 if (newConv) {
                     setConversation(newConv);
-                    fetchMessages(newConv.id, { initial: true });
                 } else if (createError) {
                     // Possible conflict or other error
                     console.error("Error creating conversation:", createError);
+                    // It might exist now (race condition), try fetching again?
+                    // For MVP, just show error or retry.
                 }
             }
             setIsLoading(false);
         }
 
         initChat();
-    }, [conversationId, currentUserId, targetUserId, jobId, supabase]);
+    }, [currentUser, targetUserId, jobId, supabase]);
 
-    // ... fetchMessages ...
     // 2. Fetch Messages
-    async function fetchMessages(convId: string, opts?: { initial?: boolean }) {
-        if (opts?.initial) setIsLoading(true);
-
+    async function fetchMessages(convId: string) {
         const { data, error } = await supabase
             .from('messages')
             .select('*')
@@ -189,74 +105,56 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
             .order('created_at', { ascending: true })
             .limit(50);
 
-        if (error) console.error('fetchMessages error:', error);
-
-        setMessages(data ?? []);
-
-        if (opts?.initial) setIsLoading(false);
+        if (data) {
+            setMessages(data);
+        }
     }
 
-    // 3. Realtime Subscription (Optional for MVP)
+    // 3. Realtime Subscription (Optional for MVP, but requested "Messaging behavior")
+    // "Insert new message, then refresh list (simple refetch ok)" -> Simple refetch is acceptable.
+    // We will setup simple refetch on send.
+
     async function handleSend(e: React.FormEvent) {
         e.preventDefault();
-
-        if (!newMessage.trim() || !conversationId || !currentUserId) return;
-
-        if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
+        if (!newMessage.trim() || !conversation) return;
 
         const content = newMessage.trim();
-        setNewMessage('');
+        setNewMessage(''); // Optimistic clear
 
         const { error } = await supabase.from('messages').insert({
-            conversation_id: conversationId,
-            sender_id: currentUserId,
-            content,
+            conversation_id: conversation.id,
+            sender_id: currentUser.id,
+            content: content
         });
 
         if (error) {
-            console.error('Failed to send:', error);
-            // optionally: setNewMessage(content);
-            return;
+            console.error("Failed to send:", error);
+            // Ideally restore message to input or show error
+        } else {
+            // Refresh
+            fetchMessages(conversation.id);
         }
-
-        fetchMessages(conversationId); // No loading spinner
     }
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
-        setNewMessage(val);
-
-        if (!conversationId || !currentUserId) return;
-
-        // Broadcast typing event (Debounced) using the EXISTING channel ref
-        if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
-
-        typingDebounceRef.current = setTimeout(() => {
-            if (typingChannelRef.current) {
-                typingChannelRef.current.send({
-                    type: 'broadcast',
-                    event: 'typing',
-                    payload: { userId: currentUserId, ts: Date.now() },
-                });
-            }
-        }, 250);
-    };
 
     if (isLoading) {
-        return <div className="flex justify-center items-center h-full min-h-[400px]"><Loader2 className="animate-spin text-gray-400" /></div>;
+        return <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin text-gray-400" /></div>;
     }
 
-    if (!conversation) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full min-h-[500px] text-gray-400 p-8 space-y-4">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
-                    <User className="w-8 h-8 opacity-50" />
-                </div>
-                <p className="text-lg font-medium">اختر محادثة من القائمة للبدء</p>
-                <p className="text-sm opacity-75">يمكنك التواصل مع المواهب والشركات مباشرة هنا.</p>
-            </div>
-        );
+    if (!targetUserId && !conversation) {
+        return <div className="text-center p-8 text-gray-500">اختر محادثة للبدء</div>;
     }
+
+    // 4. Mark as Read on Open/Change
+    useEffect(() => {
+        if (!conversation?.id || !currentUser?.id) return;
+
+        // Optimistic / Non-blocking call
+        supabase.rpc('mark_conversation_read', { p_conversation_id: conversation.id })
+            .then(({ error }) => {
+                if (error) console.error('mark_conversation_read error:', error);
+            });
+
+    }, [conversation?.id, currentUser?.id, supabase]);
 
     return (
         <div className="flex flex-col h-[600px] bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
@@ -274,7 +172,7 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f8faff] min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f8faff]">
                 {messages.length === 0 ? (
                     <div className="text-center text-gray-400 mt-12 text-sm">
                         لا توجد رسائل بعد. ابدأ المحادثة الآن!
@@ -297,28 +195,15 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
                         );
                     })
                 )}
-
-                {/* Typing Indicator */}
-                {isOtherTyping && (
-                    <div className="flex justify-start animate-pulse">
-                        <div className="bg-gray-100 border border-gray-200 text-gray-500 text-xs px-3 py-2 rounded-xl rounded-tr-none flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                            <span className="mr-1">يكتب الآن...</span>
-                        </div>
-                    </div>
-                )}
-
                 <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
-            <form onSubmit={handleSend} className="p-4 bg-white border-t border-gray-100 flex gap-2 shrink-0">
+            <form onSubmit={handleSend} className="p-4 bg-white border-t border-gray-100 flex gap-2">
                 <input
                     type="text"
                     value={newMessage}
-                    onChange={handleChange}
+                    onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="اكتب رسالتك هنا..."
                     className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#0084db] transition-colors text-right"
                     dir="rtl"
@@ -328,7 +213,7 @@ export default function ChatInterface({ currentUser, targetUserId, jobId, conver
                     disabled={!newMessage.trim()}
                     className="bg-[#0084db] text-white p-3 rounded-xl hover:bg-[#006bb3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <Send className="w-5 h-5 ltr:rotate-180" />
+                    <Send className="w-5 h-5 ltr:rotate-180" /> {/* Rotate if needed for RTL feel, usually Send icon points right which is out in RTL? Left? Lucide send points right. In RTL right is 'back'. We want it to point Left? Actually standard is send icon points direction of reading flow usually or just generic paper plane. */}
                 </button>
             </form>
         </div>
