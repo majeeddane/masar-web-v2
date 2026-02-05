@@ -98,7 +98,7 @@ export default function ConversationsList({ currentUser, selectedId }: Conversat
   if (conversations.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400">
-        <p>с╟ ╩ц╠╧ с╧э▀ у═╟╧╦╟╩ ═╩ь ╟с┬ф.</p>
+        <p>┘Д╪з ╪к┘И╪м╪п ┘Д╪п┘К┘Г ┘Е╪н╪з╪п╪л╪з╪к ╪н╪к┘Й ╪з┘Д╪в┘Ж.</p>
       </div>
     );
   }
@@ -106,13 +106,13 @@ export default function ConversationsList({ currentUser, selectedId }: Conversat
   return (
     <div className="relative z-10 flex flex-col h-full bg-white rounded-3xl md:border border-gray-100 overflow-hidden">
       <div className="p-4 border-b border-gray-100 space-y-4">
-        <h2 className="text-xl font-black text-gray-900 px-1">╟с╤╙╟╞с</h2>
+        <h2 className="text-xl font-black text-gray-900 px-1">╪з┘Д╪▒╪│╪з╪ж┘Д</h2>
 
         <div className="relative">
           <Search className="absolute right-3 top-3 w-4 h-4 text-gray-400" />
           <input
             className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2.5 pr-10 pl-4 text-sm focus:border-blue-500 outline-none transition-all"
-            placeholder="╚═╦ ▌э ╟су═╟╧╦╟╩..."
+            placeholder="╪и╪н╪л ┘Б┘К ╪з┘Д┘Е╪н╪з╪п╪л╪з╪к..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -125,7 +125,7 @@ export default function ConversationsList({ currentUser, selectedId }: Conversat
               filter === 'all' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            ╟с▀с
+            ╪з┘Д┘Г┘Д
           </button>
           <button
             onClick={() => setFilter('unread')}
@@ -135,7 +135,7 @@ export default function ConversationsList({ currentUser, selectedId }: Conversat
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            █э╤ у▐╤ц┴
+            ╪║┘К╪▒ ┘Е┘В╪▒┘И╪б
           </button>
         </div>
       </div>
@@ -188,7 +188,7 @@ export default function ConversationsList({ currentUser, selectedId }: Conversat
                       item.unread_count > 0 ? 'font-bold text-gray-900' : 'text-gray-500'
                     }`}
                   >
-                    {item.last_message || 'у╤▌▐'}
+                    {item.last_message || '┘Е╪▒┘Б┘В'}
                   </p>
                 </div>
               </div>
