@@ -1,206 +1,94 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { signup } from '../auth/actions'; // استيراد الأكشن الذي صنعناه
+import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { Briefcase, Loader2, ArrowRight, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 
 export default function SignupPage() {
-    const [fullName, setFullName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
 
-    const handleSignup = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-        setSuccess(false);
+    async function handleSubmit(formData: FormData) {
+        setIsLoading(true);
+        setErrorMsg('');
 
-        try {
-            // 1. Attempt Signup
-            let { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: fullName,
-                    }
-                }
-            });
+        const result = await signup(formData);
 
-            // 2. Handle "User already registered" -> Auto-Login
-            if (error && error.message.includes("User already registered")) {
-                console.log("User exists, attempting auto-login...");
-                const loginResult = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
-
-                if (loginResult.error) {
-                    if (loginResult.error.message.includes("Invalid login credentials")) {
-                        throw new Error("هذا البريد مسجل مسبقاً، ولكن كلمة المرور غير صحيحة. يرجى تسجيل الدخول.");
-                    }
-                    throw loginResult.error;
-                }
-
-                data = loginResult.data;
-                error = null; // Clear error since login succeeded
-            }
-
-            if (error) throw error;
-
-            // 3. Handle Success / Redirect
-            if (data.session) {
-                // Confirm Email is OFF, so we have a session. GO TO DASHBOARD.
-                window.location.assign('/dashboard');
-            } else if (data.user && !data.session) {
-                // Edge case: Confirm Email might still be ON?
-                setSuccess(true); // Fallback to "Check Email" message
-            }
-
-        } catch (err: any) {
-            setError(err.message || 'حدث خطأ أثناء إنشاء الحساب');
-        } finally {
-            setLoading(false);
+        // إذا وصلنا هنا فهذا يعني وجود خطأ، لأن النجاح يعمل Redirect
+        if (result?.error) {
+            setErrorMsg(result.error);
+            setIsLoading(false);
         }
-    };
+    }
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 overflow-hidden relative">
-            {/* Background Elements */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 pointer-events-none" />
-            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20 pointer-events-none"></div>
-            <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-500/30 rounded-full blur-[100px] animate-pulse pointer-events-none" />
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
+            <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-[40px] shadow-sm border border-gray-100">
+                <div className="text-center">
+                    <h2 className="text-3xl font-black text-gray-900">انضم إلى مسار 🚀</h2>
+                    <p className="mt-2 text-sm text-gray-600">
+                        أنشئ حسابك وابدأ رحلة البحث عن فرصتك
+                    </p>
+                </div>
 
-            {/* Header / Nav */}
-            <header className="absolute top-0 w-full z-50 p-6 flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-2 group">
-                    <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-lg flex items-center justify-center text-white shadow-lg group-hover:bg-white/20 transition-colors">
-                        <Briefcase className="w-6 h-6" />
-                    </div>
-                    <span className="text-2xl font-bold text-white tracking-tight">مسار</span>
-                </Link>
-
-                <Link href="/" className="text-white/80 hover:text-white flex items-center gap-2 text-sm font-medium transition-colors">
-                    العودة للرئيسية
-                    <ArrowRight className="w-4 h-4" />
-                </Link>
-            </header>
-
-            <div className="flex-1 flex items-center justify-center px-4 relative z-10 pt-20 pb-10">
-                <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-fade-in-up">
-                    <div className="p-8">
-
-                        {success ? (
-                            <div className="text-center py-10">
-                                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <CheckCircle2 className="w-8 h-8" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-blue-950 mb-2">تم إنشاء الحساب بنجاح!</h2>
-                                <p className="text-slate-500 mb-8">
-                                    يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك قبل تسجيل الدخول.
-                                </p>
-                                <Link
-                                    href="/login"
-                                    className="inline-block w-full py-3.5 bg-blue-900 hover:bg-blue-800 text-white rounded-lg font-bold shadow-md transition-all"
-                                >
-                                    تسجيل الدخول الآن
-                                </Link>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="text-center mb-8">
-                                    <h2 className="text-3xl font-bold text-blue-950 mb-2">إنشاء حساب جديد</h2>
-                                    <p className="text-slate-500">انضم إلينا وابدأ مسارك المهني</p>
-                                </div>
-
-                                {error && (
-                                    <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-6 text-center border border-red-100">
-                                        {error}
-                                    </div>
-                                )}
-
-                                <form onSubmit={handleSignup} className="space-y-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-2">الاسم الكامل</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={fullName}
-                                            onChange={(e) => setFullName(e.target.value)}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                            placeholder="محمد أحمد"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-2">البريد الإلكتروني</label>
-                                        <input
-                                            type="email"
-                                            required
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                            placeholder="name@example.com"
-                                            dir="ltr"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-2">كلمة المرور</label>
-                                        <div className="relative">
-                                            <input
-                                                type={showPassword ? "text" : "password"}
-                                                required
-                                                minLength={6}
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                                placeholder="••••••••"
-                                                dir="ltr"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
-                                            >
-                                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="w-full py-3.5 bg-blue-900 hover:bg-blue-800 text-white rounded-lg font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                                    >
-                                        {loading ? (
-                                            <>
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                                جاري الإنشاء...
-                                            </>
-                                        ) : (
-                                            'إنشاء الحساب'
-                                        )}
-                                    </button>
-                                </form>
-                            </>
-                        )}
+                <form action={handleSubmit} className="mt-8 space-y-6">
+                    <div className="rounded-md shadow-sm space-y-4">
+                        <div>
+                            <label className="text-sm font-bold text-gray-700 mb-1 block">الاسم الكامل</label>
+                            <input
+                                name="fullName"
+                                type="text"
+                                required
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#0084db] outline-none transition-all"
+                                placeholder="مثال: محمد أحمد"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-bold text-gray-700 mb-1 block">البريد الإلكتروني</label>
+                            <input
+                                name="email"
+                                type="email"
+                                required
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#0084db] outline-none transition-all"
+                                placeholder="name@example.com"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-bold text-gray-700 mb-1 block">كلمة المرور</label>
+                            <input
+                                name="password"
+                                type="password"
+                                required
+                                minLength={6}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#0084db] outline-none transition-all"
+                                placeholder="******"
+                            />
+                        </div>
                     </div>
 
-                    {!success && (
-                        <div className="p-6 bg-slate-50 border-t border-slate-100 text-center text-sm text-slate-600">
-                            لديك حساب بالفعل؟{' '}
-                            <Link href="/login" className="text-blue-600 hover:text-blue-700 font-bold">
-                                تسجيل الدخول
-                            </Link>
+                    {errorMsg && (
+                        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl font-bold text-center">
+                            ⚠️ {errorMsg}
                         </div>
                     )}
-                </div>
+
+                    <div>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-sm font-black rounded-xl text-white bg-[#0084db] hover:bg-[#006bb3] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-lg shadow-blue-100"
+                        >
+                            {isLoading ? <Loader2 className="animate-spin" /> : 'إنشاء حساب جديد'}
+                        </button>
+                    </div>
+
+                    <div className="text-center mt-4">
+                        <Link href="/login" className="text-sm font-bold text-gray-400 hover:text-[#0084db] transition-colors">
+                            لديك حساب بالفعل؟ سجل دخولك
+                        </Link>
+                    </div>
+                </form>
             </div>
         </div>
     );

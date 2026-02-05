@@ -1,85 +1,42 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabaseServer';
 import { revalidatePath } from 'next/cache';
-
-// Use Service Role Key for Admin privileges (bypassing RLS if needed, although policies allow insert)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-function getAdminClient() {
-    return createClient(supabaseUrl, serviceRoleKey);
-}
+import { redirect } from 'next/navigation';
 
 export async function joinTalent(formData: FormData) {
-    const supabase = getAdminClient();
-    const email = formData.get('email') as string;
+    const supabase = await createClient();
 
-    // 1. Fetch existing profile to preserve data (like avatar) if not updated
-    const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('email', email)
-        .single();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: 'Unauthorized' };
+    }
 
     const fullName = formData.get('fullName') as string;
     const jobTitle = formData.get('jobTitle') as string;
     const location = formData.get('location') as string;
-    const nationality = formData.get('nationality') as string;
     const bio = formData.get('bio') as string;
+    const skills = formData.get('skills') as string;
     const phone = formData.get('phone') as string;
-    const skillsString = formData.get('skills') as string;
-    const avatarFile = formData.get('avatar') as File;
 
-    let skills: string[] = [];
-    try {
-        skills = JSON.parse(skillsString);
-    } catch {
-        skills = skillsString ? skillsString.split(',').map(s => s.trim()) : [];
-    }
+    // Handle Avatar if present (assuming logic for upload exists or skipping for now)
+    // const avatar = formData.get('avatar'); 
 
-    // Default: Use existing avatar if available
-    let avatarUrl = existingProfile?.avatar_url || '';
+    const { error } = await supabase.from('profiles').upsert({
+        user_id: user.id,
+        full_name: fullName,
+        job_title: jobTitle,
+        location,
+        bio,
+        skills, // Assuming text or array based on schema, using text for now if comma separated
+        phone,
+        updated_at: new Date().toISOString()
+    });
 
-    // 2. Upload new avatar ONLY if provided
-    if (avatarFile && avatarFile.size > 0) {
-        const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `public/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, avatarFile, {
-                contentType: avatarFile.type,
-                upsert: false
-            });
-
-        if (!uploadError) {
-            const { data: { publicUrl } } = supabase.storage
-                .from('avatars')
-                .getPublicUrl(filePath);
-            avatarUrl = publicUrl;
-        }
-    }
-
-    // 3. Smart Upsert
-    const { error: dbError } = await supabase
-        .from('profiles')
-        .upsert({
-            full_name: fullName,
-            job_title: jobTitle,
-            location: location,
-            nationality: nationality,
-            bio: bio,
-            email: email,
-            phone: phone,
-            skills: skills,
-            avatar_url: avatarUrl // Will retain old url if no new one
-        }, { onConflict: 'email' });
-
-    if (dbError) {
-        console.error('DB Error:', dbError);
-        return { success: false, error: 'فشل في حفظ البيانات: ' + dbError.message };
+    if (error) {
+        console.error('Join Talent Error:', error);
+        return { success: false, error: error.message };
     }
 
     revalidatePath('/talents');

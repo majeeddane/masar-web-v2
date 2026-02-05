@@ -1,6 +1,6 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
-import { MapPin, Mail, Phone, ShieldCheck, Edit3 } from 'lucide-react';
+import { MapPin, Mail, Phone, ShieldCheck, Edit3, FileText } from 'lucide-react';
 import ContactSection from '@/components/ContactSection';
 import Link from 'next/link';
 
@@ -11,7 +11,7 @@ export default async function TalentProfilePage(props: { params: Promise<{ id: s
     // 1. جلب بيانات المبدع الحقيقية بناءً على المعرف من الرابط
     const { data: talent, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, experiences(*)') // <--- أضفنا experiences(*)
         .eq('id', params.id)
         .single();
 
@@ -51,6 +51,19 @@ export default async function TalentProfilePage(props: { params: Promise<{ id: s
                         </div>
 
                         <ContactSection email={talent.email} phone={talent.phone} />
+
+                        {/* CV Download Button */}
+                        {talent.cv_url && (
+                            <a
+                                href={talent.cv_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-4 w-full md:w-auto inline-flex items-center justify-center gap-2 border-2 border-[#0084db] text-[#0084db] px-8 py-4 rounded-2xl font-black hover:bg-blue-50 transition-all shadow-sm"
+                            >
+                                <FileText className="w-5 h-5" />
+                                عرض السيرة الذاتية
+                            </a>
+                        )}
                     </div>
                 </div>
 
@@ -72,6 +85,44 @@ export default async function TalentProfilePage(props: { params: Promise<{ id: s
                                     {skill}
                                 </span>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* === قسم الخبرات الجديد === */}
+                    <div className="bg-white border border-gray-100 rounded-[40px] p-10 shadow-sm">
+                        <h2 className="text-xl font-black mb-8 text-gray-900 text-center">الخبرات المهنية</h2>
+
+                        <div className="relative border-r-2 border-gray-100 mr-3 space-y-8">
+                            {talent.experiences && talent.experiences.length > 0 ? (
+                                talent.experiences
+                                    .sort((a: any, b: any) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())
+                                    .map((exp: any) => (
+                                        <div key={exp.id} className="relative pr-8 group">
+                                            <div className="absolute -right-[9px] top-1 w-4 h-4 bg-white border-4 border-[#0084db] rounded-full"></div>
+                                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
+                                                    <div>
+                                                        <h3 className="font-bold text-gray-900 text-xl">{exp.title}</h3>
+                                                        <p className="text-gray-500 font-medium flex items-center gap-2 mt-1">
+                                                            <span className="text-[#0084db]">{exp.company}</span>
+                                                            {exp.location && <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-400">{exp.location}</span>}
+                                                        </p>
+                                                    </div>
+                                                    <span className="text-sm font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-lg border border-gray-100 whitespace-nowrap">
+                                                        {exp.start_date} - {exp.is_current ? 'الآن' : exp.end_date}
+                                                    </span>
+                                                </div>
+                                                {exp.description && (
+                                                    <p className="text-gray-600 text-sm mt-4 leading-relaxed border-t border-gray-50 pt-3">
+                                                        {exp.description}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                            ) : (
+                                <p className="text-gray-400 italic pr-8">لا توجد خبرات مسجلة.</p>
+                            )}
                         </div>
                     </div>
                 </div>

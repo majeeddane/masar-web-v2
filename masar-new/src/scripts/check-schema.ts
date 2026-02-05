@@ -28,6 +28,22 @@ async function checkSchema() {
         }
     }
 
+    console.log('Checking profiles table...');
+    const { data: profiles, error: profilesError } = await supabase.from('profiles').select('*').limit(1);
+
+    if (profilesError) {
+        console.error('Error fetching profiles:', profilesError.message);
+    } else {
+        console.log('profiles table exists.');
+        if (profiles.length > 0) {
+            console.log('profiles Columns:', Object.keys(profiles[0]));
+        } else {
+            // If empty, insert a dummy to check? No, risky. 
+            // Just rely on error if validation fails or assume I need to ADD the column.
+            console.log('profiles table is empty.');
+        }
+    }
+
     console.log('Checking jobs table...');
     const { data: jobs, error: jobsError } = await supabase.from('jobs').select('*').limit(1);
     if (jobsError) console.error(jobsError);
