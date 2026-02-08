@@ -126,6 +126,30 @@ export default function DashboardPage() {
             setReceivedApplications(apps => apps.map(app =>
                 app.id === appId ? { ...app, status: newStatus } : app
             ));
+
+            // Notify the seeker
+            const app = receivedApplications.find(a => a.id === appId);
+            if (app && app.seeker_id) {
+                let message = '';
+                let type = 'info';
+
+                if (newStatus === 'accepted') {
+                    message = `🎉 مبروك! تم قبول طلبك للوظيفة: ${app.job?.title}`;
+                    type = 'success';
+                } else if (newStatus === 'rejected') {
+                    message = `تم تحديث حالة طلبك للوظيفة: ${app.job?.title}`;
+                    type = 'warning';
+                }
+
+                if (message) {
+                    await supabase.from('notifications').insert({
+                        user_id: app.seeker_id,
+                        message: message,
+                        type: type
+                    });
+                }
+            }
+
         } catch (error) {
             console.error('Error updating status:', error);
             alert('حدث خطأ أثناء تحديث الحالة');
@@ -266,8 +290,8 @@ export default function DashboardPage() {
                                                     {app.job?.title || 'عنوان الوظيفة محذوف'}
                                                 </h4>
                                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${app.status === 'accepted' ? 'bg-green-100 text-green-700' :
-                                                        app.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                                            'bg-yellow-100 text-yellow-700'
+                                                    app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                        'bg-yellow-100 text-yellow-700'
                                                     }`}>
                                                     {app.status === 'accepted' ? 'مقبول' :
                                                         app.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}
@@ -331,8 +355,8 @@ export default function DashboardPage() {
                                                     <div className="flex items-center gap-2">
                                                         <h4 className="font-bold text-gray-900 text-sm">{app.seeker?.full_name}</h4>
                                                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${app.status === 'accepted' ? 'bg-green-100 text-green-700' :
-                                                                app.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                                                    'bg-yellow-100 text-yellow-700'
+                                                            app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                                'bg-yellow-100 text-yellow-700'
                                                             }`}>
                                                             {app.status === 'accepted' ? 'مقبول' :
                                                                 app.status === 'rejected' ? 'مرفوض' : 'قيد الانتظار'}

@@ -1,193 +1,144 @@
-import { supabase } from '@/lib/supabaseClient';
+'use client';
+import { useState, useEffect } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
-import { MapPin, Calendar, Briefcase, ArrowLeft, ExternalLink, Building2, MessageCircle, Mail } from 'lucide-react';
+import { Newspaper, ArrowLeft, Calendar, User, Search, Loader2 } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
-// Force dynamic rendering to ensure fresh data
-export const dynamic = 'force-dynamic';
+export default function BlogPage() {
+    const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
-interface Job {
-    id: string; // uuid
-    title: string;
-    description?: string;
-    source_url?: string;
-    created_at: string;
-    company_name?: string;
-    company_logo?: string;
-    location?: string;
-    city?: string;
-    contact_info?: string;
-    phone?: string;
-    contact_phone?: string;
-    email?: string;
-}
+    const [posts, setPosts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [searchQuery, setSearchQuery] = useState('');
 
-// Format date to local Arabic format
-const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    try {
-        return new Date(dateString).toLocaleDateString('ar-SA', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
-    } catch (e) {
-        return dateString;
-    }
-};
+    useEffect(() => {
+        const fetchPosts = async () => {
+            let query = supabase
+                .from('posts')
+                .select('*, author:author_id(full_name, avatar_url)')
+                .order('published_at', { ascending: false });
 
-export default async function NewsPage() {
-    // 1. Fetch Data from 'jobs' table
-    const { data: jobs, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .order('created_at', { ascending: false });
+            if (selectedCategory !== 'All') {
+                query = query.eq('category', selectedCategory);
+            }
 
-    if (error) {
-        console.error('Error fetching jobs:', error);
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
-                <div className="text-red-500 font-bold text-lg">حدث خطأ في تحميل الوظائف. يرجى المحاولة لاحقاً.</div>
-            </div>
-        );
-    }
+            const { data, error } = await query;
+            if (data) setPosts(data);
+            setLoading(false);
+        };
 
-    const getContactUrl = (job: Job) => {
-        let phone = job.contact_phone || job.phone;
-        let email = job.email;
+        fetchPosts();
+    }, [selectedCategory]);
 
-        if (!phone && !email && job.contact_info) {
-            try {
-                const info = typeof job.contact_info === 'string' ? JSON.parse(job.contact_info) : job.contact_info;
-                // @ts-ignore
-                if (info?.phones && info.phones.length > 0) phone = info.phones[0];
-                // @ts-ignore
-                if (info?.emails && info.emails.length > 0) email = info.emails[0];
-            } catch (e) { }
-        }
+    const filteredPosts = posts.filter(post =>
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.excerpt?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
-        if (phone) {
-            const cleanPhone = phone.replace(/[^\d+]/g, '');
-            const message = encodeURIComponent(`مهتم بالوظيفة: ${job.title}`);
-            return { url: `https://wa.me/${cleanPhone}?text=${message}`, type: 'whatsapp' };
-        }
-        if (email) return { url: `mailto:${email}`, type: 'email' };
-        return null;
-    };
+    const categories = ['All', 'General', 'Career Tips', 'Market News', 'Success Stories'];
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
-            <div className="max-w-7xl mx-auto">
-                {/* Header Section */}
-                <div className="text-center mb-12">
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-blue-900 mb-4">
-                        📢 أحدث الوظائف الحكومية والشركات
-                    </h1>
-                    <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-                        تصفح أحدث الوظائف المتاحة في المملكة.
+        <div className="min-h-screen bg-gray-50 font-sans" dir="rtl">
+            <Navbar />
+
+            {/* Hero Section */}
+            <div className="bg-[#115d9a] text-white py-16 px-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                <div className="max-w-7xl mx-auto relative z-10 text-center">
+                    <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">مركز المعرفة</h1>
+                    <p className="text-xl md:text-2xl text-blue-100 max-w-2xl mx-auto font-medium">
+                        أحدث المقالات، النصائح المهنية، وأخبار سوق العمل السعودي
                     </p>
                 </div>
+            </div>
 
-                {/* Grid Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {jobs && jobs.length > 0 ? (
-                        jobs.map((item: Job) => {
-                            const contact = getContactUrl(item);
-                            const companyName = item.company_name || 'جهة توظيف';
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 py-12">
 
-                            return (
-                                <div key={item.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col border border-gray-100 group">
+                {/* Filters & Search */}
+                <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                    <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
+                        {categories.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setSelectedCategory(cat)}
+                                className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${selectedCategory === cat
+                                        ? 'bg-[#115d9a] text-white shadow-md transform scale-105'
+                                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                    }`}
+                            >
+                                {cat === 'All' ? 'الكل' :
+                                    cat === 'General' ? 'عام' :
+                                        cat === 'Career Tips' ? 'نصائح مهنية' :
+                                            cat === 'Market News' ? 'أخبار السوق' : 'قصص نجاح'}
+                            </button>
+                        ))}
+                    </div>
 
-                                    {/* Header with Circular Logo */}
-                                    <div className="p-6 pb-0 flex items-start gap-4">
-                                        {/* Logo or Placeholder */}
-                                        <div className="shrink-0">
-                                            {item.company_logo ? (
-                                                <img
-                                                    src={item.company_logo}
-                                                    alt={companyName}
-                                                    className="w-14 h-14 rounded-full object-cover border border-gray-100 shadow-sm"
-                                                />
-                                            ) : (
-                                                <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm text-blue-600 font-bold text-xl">
-                                                    {companyName.charAt(0).toUpperCase()}
-                                                </div>
-                                            )}
+                    <div className="relative w-full md:w-80">
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="ابحث عن مقال..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-4 pr-10 py-3 rounded-xl border-gray-200 focus:border-[#115d9a] focus:ring-[#115d9a] transition-shadow shadow-sm"
+                        />
+                    </div>
+                </div>
+
+                {/* Posts Grid */}
+                {loading ? (
+                    <div className="flex justify-center py-20">
+                        <Loader2 className="h-10 w-10 text-[#115d9a] animate-spin" />
+                    </div>
+                ) : filteredPosts.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {filteredPosts.map(post => (
+                            <Link href={`/news/${post.id}`} key={post.id} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full">
+                                <div className="h-56 bg-gray-200 relative overflow-hidden">
+                                    {post.cover_image ? (
+                                        <img src={post.cover_image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-gray-400">
+                                            <Newspaper className="h-12 w-12" />
                                         </div>
-
-                                        <div className="flex-1 min-w-0 pt-1">
-                                            <h2 className="text-lg font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
-                                                {item.title}
-                                            </h2>
-                                            <p className="text-gray-500 text-sm mt-1 truncate">{companyName}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Metadata */}
-                                    <div className="px-6 py-4 flex flex-wrap gap-3 text-sm text-gray-500">
-                                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full">
-                                            <MapPin className="w-4 h-4 text-gray-400" />
-                                            <span>{item.city || item.location || 'السعودية'}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full">
-                                            <Calendar className="w-4 h-4 text-gray-400" />
-                                            <span>{formatDate(item.created_at)}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Content Body */}
-                                    <div className="px-6 pb-6 flex-1 flex flex-col">
-                                        <p className="text-gray-500 text-sm leading-relaxed line-clamp-3 mb-6 flex-1">
-                                            {item.description || "انقر لعرض تفاصيل الوظيفة."}
-                                        </p>
-
-                                        {/* Action Buttons */}
-                                        <div className="mt-auto flex gap-3">
-                                            {contact ? (
-                                                <a
-                                                    href={contact.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className={`flex-1 ${contact.type === 'whatsapp' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg`}
-                                                >
-                                                    {contact.type === 'whatsapp' ? <MessageCircle className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
-                                                    <span>تواصل الآن</span>
-                                                </a>
-                                            ) : (
-                                                <Link
-                                                    href={`/news/${item.id}`} // Or update to jobs route
-                                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md"
-                                                >
-                                                    <span>التفاصيل</span>
-                                                </Link>
-                                            )}
-
-                                            {item.source_url && (
-                                                <a
-                                                    href={item.source_url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-3 rounded-xl transition-all"
-                                                    title="المصدر الأصلي"
-                                                >
-                                                    <ExternalLink className="w-4 h-4" />
-                                                </a>
-                                            )}
-                                        </div>
+                                    )}
+                                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg text-xs font-bold text-[#115d9a] shadow-sm">
+                                        {post.category}
                                     </div>
                                 </div>
-                            );
-                        })
-                    ) : (
-                        <div className="col-span-full text-center py-20">
-                            <div className="bg-white p-10 rounded-3xl shadow-sm inline-block max-w-md mx-auto">
-                                <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">لا توجد وظائف حالياً</h3>
-                                <p className="text-gray-500">جاري البحث عن وظائف جديدة، يرجى العودة قريباً.</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                                <div className="p-6 flex-1 flex flex-col">
+                                    <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                                        <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(post.published_at).toLocaleDateString('ar-SA')}</span>
+                                        <span>•</span>
+                                        <span className="flex items-center gap-1"><User className="h-3 w-3" /> {post.author?.full_name || 'مسار'}</span>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3 leading-snug group-hover:text-[#115d9a] transition-colors line-clamp-2">
+                                        {post.title}
+                                    </h3>
+                                    <p className="text-gray-600 text-sm line-clamp-3 mb-4 flex-1 leading-relaxed">
+                                        {post.excerpt}
+                                    </p>
+                                    <div className="flex items-center text-[#115d9a] font-bold text-sm group-hover:gap-2 transition-all">
+                                        اقرأ المزيد <ArrowLeft className="h-4 w-4 mr-1" />
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+                        <Newspaper className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-gray-900">لا توجد مقالات مضافة بعد</h3>
+                        <p className="text-gray-500 mt-2">ترقبوا نشر مقالات جديدة قريباً!</p>
+                    </div>
+                )}
             </div>
         </div>
     );

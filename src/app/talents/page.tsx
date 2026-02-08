@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import {
     Search, User, Briefcase, MessageCircle, ArrowRight, Loader2,
-    MapPin, Award, ChevronDown, BadgeCheck
+    MapPin, Award, ChevronDown, ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import CategoryBar from '@/components/CategoryBar';
@@ -172,7 +172,7 @@ export default function TalentsPage() {
                                             <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-1 group-hover:text-[#115d9a] transition-colors flex items-center gap-1">
                                                 {talent.full_name || 'مستخدم بدون اسم'}
                                                 {talent.is_verified && (
-                                                    <BadgeCheck className="h-5 w-5 text-[#115d9a] fill-blue-50" />
+                                                    <ShieldCheck className="h-5 w-5 text-[#115d9a] fill-blue-50" />
                                                 )}
                                             </h3>
 

@@ -13,13 +13,15 @@ import {
     LayoutDashboard,
     LogOut,
     User as UserIcon,
-    FileText
+    FileText,
+    Bell
 } from 'lucide-react';
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [user, setUser] = useState<any>(null);
-    const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadMessages, setUnreadMessages] = useState(0);
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
     const pathname = usePathname();
     const router = useRouter();
 
@@ -29,48 +31,69 @@ export default function Navbar() {
     ), []);
 
     useEffect(() => {
-        let channel: any = null;
+        let msgChannel: any = null;
+        let notifChannel: any = null;
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             setUser(session?.user ?? null);
 
-            if (channel) {
-                supabase.removeChannel(channel);
-                channel = null;
-            }
+            // Cleanup old channels
+            if (msgChannel) { supabase.removeChannel(msgChannel); msgChannel = null; }
+            if (notifChannel) { supabase.removeChannel(notifChannel); notifChannel = null; }
 
             if (session?.user) {
-                const fetchCount = async () => {
+                // 1. Fetch Message Count
+                const fetchMsgCount = async () => {
                     const { count } = await supabase
                         .from('messages')
                         .select('*', { count: 'exact', head: true })
                         .eq('receiver_id', session.user.id)
                         .is('read_at', null);
-                    setUnreadCount(count || 0);
+                    setUnreadMessages(count || 0);
                 };
-                fetchCount();
+                fetchMsgCount();
 
-                channel = supabase
+                // 2. Fetch Notification Count
+                const fetchNotifCount = async () => {
+                    const { count } = await supabase
+                        .from('notifications')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', session.user.id)
+                        .eq('is_read', false);
+                    setUnreadNotifications(count || 0);
+                };
+                fetchNotifCount();
+
+                // 3. Subscribe to Messages
+                msgChannel = supabase
                     .channel(`navbar_messages_${session.user.id}`)
                     .on(
                         'postgres_changes',
-                        {
-                            event: '*',
-                            schema: 'public',
-                            table: 'messages',
-                            filter: `receiver_id=eq.${session.user.id}`
-                        },
-                        () => fetchCount()
+                        { event: '*', schema: 'public', table: 'messages', filter: `receiver_id=eq.${session.user.id}` },
+                        () => fetchMsgCount()
                     )
                     .subscribe();
+
+                // 4. Subscribe to Notifications
+                notifChannel = supabase
+                    .channel(`navbar_notifications_${session.user.id}`)
+                    .on(
+                        'postgres_changes',
+                        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` },
+                        () => fetchNotifCount()
+                    )
+                    .subscribe();
+
             } else {
-                setUnreadCount(0);
+                setUnreadMessages(0);
+                setUnreadNotifications(0);
             }
         });
 
         return () => {
             subscription.unsubscribe();
-            if (channel) supabase.removeChannel(channel);
+            if (msgChannel) supabase.removeChannel(msgChannel);
+            if (notifChannel) supabase.removeChannel(notifChannel);
         };
     }, [supabase]);
 
@@ -80,7 +103,6 @@ export default function Navbar() {
         router.refresh();
     };
 
-    // --- تحديث الروابط: فصل الوظائف عن الباحثين عن عمل ---
     const navLinks = [
         { name: 'الرئيسية', href: '/', icon: Home },
         { name: 'الوظائف الشاغرة', href: '/jobs', icon: Briefcase },
@@ -118,8 +140,8 @@ export default function Navbar() {
                                     key={link.name}
                                     href={link.href}
                                     className={`flex items-center gap-2 font-bold transition-all duration-200 ${isActive
-                                            ? 'text-[#115d9a] bg-blue-50 px-3 py-1.5 rounded-lg'
-                                            : 'text-gray-600 hover:text-[#115d9a] hover:bg-gray-50/50 px-3 py-1.5 rounded-lg'
+                                        ? 'text-[#115d9a] bg-blue-50 px-3 py-1.5 rounded-lg'
+                                        : 'text-gray-600 hover:text-[#115d9a] hover:bg-gray-50/50 px-3 py-1.5 rounded-lg'
                                         }`}
                                 >
                                     <Icon className={`w-4 h-4 ${isActive ? 'fill-current' : ''}`} />
@@ -133,11 +155,20 @@ export default function Navbar() {
                     <div className="flex items-center gap-3 md:gap-4">
                         {user ? (
                             <>
+                                {/* Notifications Bell */}
+                                <Link href="/dashboard" className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors group">
+                                    <Bell className="w-6 h-6 group-hover:text-[#115d9a]" />
+                                    {unreadNotifications > 0 && (
+                                        <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                                    )}
+                                </Link>
+
+                                {/* Messages */}
                                 <Link href="/messages" className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors group">
                                     <MessageCircle className="w-6 h-6 group-hover:text-[#115d9a]" />
-                                    {unreadCount > 0 && (
-                                        <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border border-white animate-pulse">
-                                            {unreadCount > 9 ? '+9' : unreadCount}
+                                    {unreadMessages > 0 && (
+                                        <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border border-white">
+                                            {unreadMessages > 9 ? '+9' : unreadMessages}
                                         </span>
                                     )}
                                 </Link>
@@ -182,8 +213,8 @@ export default function Navbar() {
                                 href={link.href}
                                 onClick={() => setIsOpen(false)}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-colors ${isActive
-                                        ? 'bg-blue-50 text-[#115d9a]'
-                                        : 'text-gray-700 hover:bg-gray-50'
+                                    ? 'bg-blue-50 text-[#115d9a]'
+                                    : 'text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
                                 <Icon className="w-5 h-5" />
