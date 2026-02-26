@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Facebook, Twitter, Instagram, Linkedin, Mail, MapPin, Phone } from 'lucide-react';
 
 export default function Footer() {
@@ -8,10 +9,8 @@ export default function Footer() {
 
                 {/* Brand Column */}
                 <div>
-                    <Link href="/" className="flex items-center gap-2 mb-6 group">
-                        <span className="text-3xl font-black text-white tracking-tighter group-hover:text-[#115d9a] transition-colors">
-                            مسار<span className="text-[#115d9a] group-hover:text-white transition-colors">.</span>
-                        </span>
+                    <Link href="/" className="block relative w-[140px] h-[50px] mb-6 group">
+                        <Image src="/logo.png" alt="Masar Logo" fill className="object-contain" />
                     </Link>
                     <p className="text-sm leading-relaxed text-gray-400 mb-6">
                         منصة التوظيف السعودية الأولى التي تربط بين الكفاءات الوطنية وأفضل الفرص الوظيفية في المملكة، مدعومة برؤية 2030.

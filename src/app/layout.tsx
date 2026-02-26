@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
+import Navbar from "@/components/Navbar";
+// 👇 التعديل هنا: أضفنا الأقواس { } لأن هذا هو سبب الشاشة الحمراء
+import { AuthProvider } from "@/providers/AuthProvider";
+import Footer from '@/components/Footer';
 
-const cairo = Cairo({
-  subsets: ["arabic"],
-  variable: "--font-cairo",
-  display: "swap",
-});
+const font = Cairo({ subsets: ["arabic"] });
 
 export const metadata: Metadata = {
-  title: "Masar Al-Wazaif | مسار الوظائف",
-  description: "Job Portal for the Future",
+  title: "Masar - مسار",
+  description: "منصة التوظيف السعودية",
+  icons: {
+    icon: '/logo.png',
+  },
 };
-
-import { AuthProvider } from "@/providers/AuthProvider";
-
-import Navbar from "@/components/Navbar";
 
 export default function RootLayout({
   children,
@@ -24,13 +23,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body
-        suppressHydrationWarning={true}
-        className={`${cairo.variable} font-sans antialiased bg-slate-50 text-slate-900`}
-      >
+      <body className={font.className}>
         <AuthProvider>
           <Navbar />
-          {children}
+          <main className="min-h-screen">
+            {children}
+          </main>
           <Footer />
         </AuthProvider>
       </body>

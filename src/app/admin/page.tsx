@@ -4,7 +4,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import {
     LayoutDashboard, Users, Briefcase, FileCheck, CheckCircle2, XCircle, Trash2, Search, ShieldCheck,
-    Activity, Loader2, Ban, UserCheck, Eye, MapPin, Building2, Calendar, Newspaper, Plus, Edit, Save, Image as ImageIcon, X
+    Activity, Loader2, Ban, UserCheck, Eye, MapPin, Building2, Calendar, Newspaper, Plus, Edit, Save, Image as ImageIcon, X, Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -49,6 +49,7 @@ export default function AdminDashboard() {
         category: 'General'
     });
     const [formLoading, setFormLoading] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     useEffect(() => {
         checkAdminAccess();
@@ -233,6 +234,42 @@ export default function AdminDashboard() {
             title: newTitle,
             slug: !editingPost && !prev.slug ? newTitle.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') : prev.slug
         }));
+    };
+
+    const handleGenerateAI = async () => {
+        if (!postForm.title) {
+            showToast('يرجى إدخال عنوان المقال أولاً', 'error');
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const response = await fetch('/api/generate-post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: postForm.title,
+                    category: postForm.category
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.error || 'فشل التوليد');
+
+            setPostForm(prev => ({
+                ...prev,
+                content: data.content,
+                excerpt: data.excerpt || prev.excerpt
+            }));
+
+            showToast('تم توليد المحتوى بنجاح! ✨');
+        } catch (error: any) {
+            console.error('AI Generation Error:', error);
+            showToast(error.message, 'error');
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const handleSavePost = async () => {
@@ -785,7 +822,18 @@ export default function AdminDashboard() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-400 mb-2">محتوى المقال</label>
+                                        <div className="flex justify-between items-end mb-2">
+                                            <label className="block text-sm font-bold text-gray-400">محتوى المقال</label>
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerateAI}
+                                                disabled={isGenerating || !postForm.title}
+                                                className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-lg shadow-indigo-900/20"
+                                            >
+                                                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                                                توليد المحتوى بالذكاء الاصطناعي ✨
+                                            </button>
+                                        </div>
                                         <textarea
                                             rows={12}
                                             value={postForm.content}

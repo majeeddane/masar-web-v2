@@ -1,243 +1,142 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
-import {
-    Menu,
-    X,
-    MessageCircle,
-    Home,
-    Briefcase,
-    Users,
-    LayoutDashboard,
-    LogOut,
-    User as UserIcon,
-    FileText,
-    Bell
-} from 'lucide-react';
+import Image from 'next/image';
+import { Bell, MessageSquare, Briefcase, User, Menu, X, Building2, BookOpen, LayoutDashboard, FileText, Home } from 'lucide-react';
 
 export default function Navbar() {
-    const [isOpen, setIsOpen] = useState(false);
-    const [user, setUser] = useState<any>(null);
-    const [unreadMessages, setUnreadMessages] = useState(0);
-    const [unreadNotifications, setUnreadNotifications] = useState(0);
     const pathname = usePathname();
-    const router = useRouter();
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const supabase = useMemo(() => createBrowserClient(
+    const [unreadNotif, setUnreadNotif] = useState(0);
+    const [unreadMsg, setUnreadMsg] = useState(0);
+
+    const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    ), []);
+    );
 
     useEffect(() => {
-        let msgChannel: any = null;
-        let notifChannel: any = null;
+        const handleScroll = () => setIsScrolled(window.scrollY > 10);
+        window.addEventListener('scroll', handleScroll);
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            setUser(session?.user ?? null);
+        const fetchData = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
 
-            // Cleanup old channels
-            if (msgChannel) { supabase.removeChannel(msgChannel); msgChannel = null; }
-            if (notifChannel) { supabase.removeChannel(notifChannel); notifChannel = null; }
+            const { count: notifCount } = await supabase
+                .from('notifications')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id)
+                .eq('is_read', false);
+            setUnreadNotif(notifCount || 0);
 
-            if (session?.user) {
-                // 1. Fetch Message Count
-                const fetchMsgCount = async () => {
-                    const { count } = await supabase
-                        .from('messages')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('receiver_id', session.user.id)
-                        .is('read_at', null);
-                    setUnreadMessages(count || 0);
-                };
-                fetchMsgCount();
-
-                // 2. Fetch Notification Count
-                const fetchNotifCount = async () => {
-                    const { count } = await supabase
-                        .from('notifications')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('user_id', session.user.id)
-                        .eq('is_read', false);
-                    setUnreadNotifications(count || 0);
-                };
-                fetchNotifCount();
-
-                // 3. Subscribe to Messages
-                msgChannel = supabase
-                    .channel(`navbar_messages_${session.user.id}`)
-                    .on(
-                        'postgres_changes',
-                        { event: '*', schema: 'public', table: 'messages', filter: `receiver_id=eq.${session.user.id}` },
-                        () => fetchMsgCount()
-                    )
-                    .subscribe();
-
-                // 4. Subscribe to Notifications
-                notifChannel = supabase
-                    .channel(`navbar_notifications_${session.user.id}`)
-                    .on(
-                        'postgres_changes',
-                        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` },
-                        () => fetchNotifCount()
-                    )
-                    .subscribe();
-
-            } else {
-                setUnreadMessages(0);
-                setUnreadNotifications(0);
-            }
-        });
-
-        return () => {
-            subscription.unsubscribe();
-            if (msgChannel) supabase.removeChannel(msgChannel);
-            if (notifChannel) supabase.removeChannel(notifChannel);
+            const { count: msgCount } = await supabase
+                .from('messages')
+                .select('*', { count: 'exact', head: true })
+                .eq('receiver_id', user.id)
+                .eq('is_read', false);
+            setUnreadMsg(msgCount || 0);
         };
+
+        fetchData();
+        return () => window.removeEventListener('scroll', handleScroll);
     }, [supabase]);
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        router.push('/login');
-        router.refresh();
-    };
-
-    const navLinks = [
+    const NAV_LINKS = [
         { name: 'الرئيسية', href: '/', icon: Home },
-        { name: 'الوظائف الشاغرة', href: '/jobs', icon: Briefcase },
-        { name: 'الباحثين عن عمل', href: '/talents', icon: Users },
-        ...(user ? [
-            { name: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
-            { name: 'وظائفي', href: '/my-jobs', icon: FileText },
-        ] : []),
+        { name: 'الوظائف الشاغرة', href: '/jobs', icon: Building2 },
+        { name: 'الشركات المميزة', href: '/companies', icon: Briefcase },
+        { name: 'الباحثين عن عمل', href: '/talents', icon: User },
+        { name: 'مركز المعرفة', href: '/blog', icon: BookOpen },
+        { name: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'وظائفي', href: '/dashboard/my-jobs', icon: FileText },
     ];
 
     return (
-        <nav className="bg-white border-b border-gray-100 sticky top-0 z-50 backdrop-blur-lg bg-white/90 font-sans" dir="rtl">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16 md:h-20">
+        <nav className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-500 ${isScrolled ? 'py-2 bg-white/95 backdrop-blur-xl shadow-md border-b border-slate-200' : 'py-3 bg-white border-b border-slate-100'}`} dir="rtl">
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
+                <div className="flex items-center justify-between gap-4">
 
-                    {/* 1. Logo */}
-                    <div className="flex-shrink-0 flex items-center">
-                        <Link href="/" className="flex items-center gap-2 md:gap-3 group">
-                            <div className="w-9 h-9 md:w-10 md:h-10 bg-[#115d9a] rounded-xl flex items-center justify-center text-white font-black text-lg md:text-xl shadow-lg shadow-blue-900/20 group-hover:scale-105 transition-transform">
-                                م
-                            </div>
-                            <span className="text-xl md:text-2xl font-black text-gray-900 tracking-tight group-hover:text-[#115d9a] transition-colors">
-                                مسار
-                            </span>
-                        </Link>
-                    </div>
-
-                    {/* 2. Desktop Navigation */}
-                    <div className="hidden md:flex items-center space-x-reverse space-x-6 lg:space-x-8">
-                        {navLinks.map((link) => {
-                            const isActive = pathname === link.href;
-                            const Icon = link.icon;
-                            return (
-                                <Link
-                                    key={link.name}
-                                    href={link.href}
-                                    className={`flex items-center gap-2 font-bold transition-all duration-200 ${isActive
-                                        ? 'text-[#115d9a] bg-blue-50 px-3 py-1.5 rounded-lg'
-                                        : 'text-gray-600 hover:text-[#115d9a] hover:bg-gray-50/50 px-3 py-1.5 rounded-lg'
-                                        }`}
-                                >
-                                    <Icon className={`w-4 h-4 ${isActive ? 'fill-current' : ''}`} />
-                                    {link.name}
-                                </Link>
-                            );
-                        })}
-                    </div>
-
-                    {/* 3. Action Area */}
-                    <div className="flex items-center gap-3 md:gap-4">
-                        {user ? (
-                            <>
-                                {/* Notifications Bell */}
-                                <Link href="/dashboard" className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors group">
-                                    <Bell className="w-6 h-6 group-hover:text-[#115d9a]" />
-                                    {unreadNotifications > 0 && (
-                                        <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
-                                    )}
-                                </Link>
-
-                                {/* Messages */}
-                                <Link href="/messages" className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors group">
-                                    <MessageCircle className="w-6 h-6 group-hover:text-[#115d9a]" />
-                                    {unreadMessages > 0 && (
-                                        <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border border-white">
-                                            {unreadMessages > 9 ? '+9' : unreadMessages}
-                                        </span>
-                                    )}
-                                </Link>
-
-                                <div className="hidden md:flex items-center gap-3 border-r border-gray-200 pr-4 mr-2">
-                                    <Link href="/profile" className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-[#115d9a] hover:text-white transition-all shadow-sm">
-                                        <UserIcon className="w-5 h-5" />
-                                    </Link>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="flex items-center gap-2 text-gray-500 hover:text-red-600 font-medium transition-colors text-sm"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="hidden md:flex items-center gap-3">
-                                <Link href="/login" className="text-gray-600 hover:text-[#115d9a] font-bold px-3 py-2">دخول</Link>
-                                <Link href="/signup" className="bg-[#115d9a] text-white px-5 py-2 rounded-xl font-bold hover:bg-[#0e4d82] transition-colors shadow-md shadow-blue-900/10">حساب جديد</Link>
-                            </div>
-                        )}
-
-                        <div className="md:hidden flex items-center">
-                            <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg">
-                                {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                            </button>
+                    {/* ✅ الحل النهائي للشعار: Aggressive Scaling */}
+                    <Link href="/" className="flex items-center gap-2 group flex-shrink-0 z-[1001] overflow-visible">
+                        {/* 
+                            Container: w-[280px] on desktop given the scaling needs.
+                            Image: scale-150 zooms in significantly.
+                            object-right & origin-right ensures it aligns properly in RTL mode.
+                        */}
+                        <div className="relative w-[180px] h-[60px] md:w-[280px] md:h-[90px] transition-transform group-hover:scale-105">
+                            <Image
+                                src="/logo.png"
+                                alt="Masar Logo"
+                                fill
+                                className="object-contain object-right scale-150 origin-right"
+                                priority
+                            />
                         </div>
+                    </Link>
+
+                    {/* القائمة الوسطى - Compact Layout */}
+                    <div className="hidden xl:flex items-center gap-1 bg-slate-50 p-1 rounded-2xl border border-slate-200/50 flex-shrink min-w-0">
+                        {NAV_LINKS.map((link) => (
+                            <Link key={link.href} href={link.href} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap overflow-hidden text-ellipsis ${pathname === link.href ? 'bg-white text-[#115d9a] shadow-sm' : 'text-slate-500 hover:text-[#115d9a] hover:bg-white/50'}`}>
+                                <link.icon className={`w-4 h-4 flex-shrink-0 ${pathname === link.href ? 'text-[#115d9a]' : 'text-slate-400'}`} />
+                                {link.name}
+                            </Link>
+                        ))}
+                    </div>
+
+                    {/* الأزرار اليسرى */}
+                    <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 z-[1001]">
+                        <div className="flex items-center gap-1.5">
+                            <Link href="/notifications" className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-[#115d9a] transition-all relative">
+                                <Bell className="w-5 h-5" />
+                                {unreadNotif > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                                        {unreadNotif}
+                                    </span>
+                                )}
+                            </Link>
+                            <Link href="/messages" className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-[#115d9a] transition-all relative">
+                                <MessageSquare className="w-5 h-5" />
+                                {unreadMsg > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-[#115d9a] text-white text-[10px] font-black w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                                        {unreadMsg}
+                                    </span>
+                                )}
+                            </Link>
+                        </div>
+                        <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>
+                        <Link href="/profile" className="flex items-center gap-2 p-1 pl-3 rounded-2xl border border-slate-200 hover:bg-white hover:shadow-sm transition-all group bg-slate-50/50">
+                            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 group-hover:bg-[#115d9a] group-hover:text-white transition-colors overflow-hidden shadow-sm">
+                                <User className="w-5 h-5" />
+                            </div>
+                            <div className="hidden lg:flex flex-col items-start leading-none gap-0.5">
+                                <span className="text-[11px] font-black text-slate-800">عبدالمجيد</span>
+                                <span className="text-[9px] text-slate-500 font-bold group-hover:text-[#115d9a] transition-colors">ملف شخصي</span>
+                            </div>
+                        </Link>
+                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="xl:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-[#115d9a] text-white shadow-lg active:scale-95 transition-transform z-[1002]">
+                            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* 4. Mobile Menu */}
-            {isOpen && (
-                <div className="md:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-100 shadow-xl px-4 py-4 space-y-2 z-50">
-                    {navLinks.map((link) => {
-                        const Icon = link.icon;
-                        const isActive = pathname === link.href;
-                        return (
-                            <Link
-                                key={link.name}
-                                href={link.href}
-                                onClick={() => setIsOpen(false)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-colors ${isActive
-                                    ? 'bg-blue-50 text-[#115d9a]'
-                                    : 'text-gray-700 hover:bg-gray-50'
-                                    }`}
-                            >
-                                <Icon className="w-5 h-5" />
+            {isMobileMenuOpen && (
+                <div className="xl:hidden absolute top-full left-0 right-0 bg-white border-t border-slate-100 shadow-2xl p-4 max-h-[85vh] overflow-y-auto z-[998]">
+                    <div className="grid grid-cols-1 gap-2">
+                        {NAV_LINKS.map((link) => (
+                            <Link key={link.href} href={link.href} className={`flex items-center gap-4 p-4 rounded-2xl font-bold transition-all ${pathname === link.href ? 'bg-blue-50 text-[#115d9a]' : 'hover:bg-slate-50 text-slate-700'}`} onClick={() => setIsMobileMenuOpen(false)}>
+                                <link.icon className={`w-5 h-5 ${pathname === link.href ? 'text-[#115d9a]' : 'text-slate-400'}`} />
                                 {link.name}
                             </Link>
-                        );
-                    })}
-                    {user ? (
-                        <>
-                            <div className="h-px bg-gray-100 my-2"></div>
-                            <Link href="/profile" onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-gray-700 hover:bg-gray-50">
-                                <UserIcon className="w-5 h-5" /> ملفي الشخصي
-                            </Link>
-                            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-red-600 hover:bg-red-50 text-right">
-                                <LogOut className="w-5 h-5" /> تسجيل خروج
-                            </button>
-                        </>
-                    ) : (
-                        <div className="pt-2 space-y-2">
-                            <Link href="/login" onClick={() => setIsOpen(false)} className="block w-full text-center py-3 rounded-xl font-bold text-gray-700 bg-gray-50">دخول</Link>
-                            <Link href="/signup" onClick={() => setIsOpen(false)} className="block w-full text-center py-3 rounded-xl font-bold text-white bg-[#115d9a]">حساب جديد</Link>
-                        </div>
-                    )}
+                        ))}
+                    </div>
                 </div>
             )}
         </nav>
