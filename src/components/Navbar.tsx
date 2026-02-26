@@ -63,17 +63,13 @@ export default function Navbar() {
                 {/* Ensure flex layout justifies between the 3 main sections properly and centers them vertically */}
                 <div className="flex items-center justify-between gap-4 md:gap-8">
 
-                    {/* ✅ الحل النهائي للشعار: */}
-                    {/* 1. تقليل عرض الحاوية لـ 200px (Desktop) حتى لا يُضيّق على باقي العناصر */}
-                    {/* 2. الإبقاء على scale لعمل الزوم والتخلص من الفراغات */}
-                    {/* 3. إضافة overflow-hidden لمنع الشعار المكبّر من الخروج عن نطاق الحاوية */}
                     <Link href="/" className="flex items-center gap-2 group flex-shrink-0 z-[1001]">
-                        <div className="relative w-[140px] h-[50px] lg:w-[200px] lg:h-[70px] overflow-hidden transition-transform group-hover:scale-105 rounded-lg">
+                        <div className="relative w-[130px] h-[45px] lg:w-[150px] lg:h-[55px] overflow-hidden transition-transform group-hover:scale-105 rounded-lg">
                             <Image
                                 src="/logo.png"
                                 alt="Masar Logo"
                                 fill
-                                className="object-cover md:object-contain object-right md:scale-125 lg:scale-150 origin-right"
+                                className="object-cover md:object-contain object-right scale-110 md:scale-125 origin-right"
                                 priority
                             />
                         </div>
