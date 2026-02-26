@@ -60,38 +60,45 @@ export default function Navbar() {
     return (
         <nav className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-500 ${isScrolled ? 'py-2 bg-white/95 backdrop-blur-xl shadow-md border-b border-slate-200' : 'py-3 bg-white border-b border-slate-100'}`} dir="rtl">
             <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
-                <div className="flex items-center justify-between gap-4">
+                {/* Ensure flex layout justifies between the 3 main sections properly and centers them vertically */}
+                <div className="flex items-center justify-between gap-4 md:gap-8">
 
-                    {/* ✅ الحل النهائي للشعار: Aggressive Scaling */}
-                    <Link href="/" className="flex items-center gap-2 group flex-shrink-0 z-[1001] overflow-visible">
-                        {/* 
-                            Container: w-[280px] on desktop given the scaling needs.
-                            Image: scale-150 zooms in significantly.
-                            object-right & origin-right ensures it aligns properly in RTL mode.
-                        */}
-                        <div className="relative w-[180px] h-[60px] md:w-[280px] md:h-[90px] transition-transform group-hover:scale-105">
+                    {/* ✅ الحل النهائي للشعار: */}
+                    {/* 1. تقليل عرض الحاوية لـ 200px (Desktop) حتى لا يُضيّق على باقي العناصر */}
+                    {/* 2. الإبقاء على scale لعمل الزوم والتخلص من الفراغات */}
+                    {/* 3. إضافة overflow-hidden لمنع الشعار المكبّر من الخروج عن نطاق الحاوية */}
+                    <Link href="/" className="flex items-center gap-2 group flex-shrink-0 z-[1001]">
+                        <div className="relative w-[140px] h-[50px] lg:w-[200px] lg:h-[70px] overflow-hidden transition-transform group-hover:scale-105 rounded-lg">
                             <Image
                                 src="/logo.png"
                                 alt="Masar Logo"
                                 fill
-                                className="object-contain object-right scale-150 origin-right"
+                                className="object-cover md:object-contain object-right md:scale-125 lg:scale-150 origin-right"
                                 priority
                             />
                         </div>
                     </Link>
 
                     {/* القائمة الوسطى - Compact Layout */}
-                    <div className="hidden xl:flex items-center gap-1 bg-slate-50 p-1 rounded-2xl border border-slate-200/50 flex-shrink min-w-0">
-                        {NAV_LINKS.map((link) => (
-                            <Link key={link.href} href={link.href} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap overflow-hidden text-ellipsis ${pathname === link.href ? 'bg-white text-[#115d9a] shadow-sm' : 'text-slate-500 hover:text-[#115d9a] hover:bg-white/50'}`}>
-                                <link.icon className={`w-4 h-4 flex-shrink-0 ${pathname === link.href ? 'text-[#115d9a]' : 'text-slate-400'}`} />
-                                {link.name}
-                            </Link>
-                        ))}
+                    {/* flex-1 to allow flexible center space if needed, hidden on mobile/small tablets, visible from lg+ (1024px) */}
+                    <div className="hidden lg:flex flex-1 justify-center items-center min-w-0">
+                        <div className="flex items-center gap-0.5 bg-slate-50 p-1 rounded-2xl border border-slate-200/50">
+                            {NAV_LINKS.map((link) => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    // Reduced padding and font size slightly to fit nicely on standard laptops
+                                    className={`flex items-center gap-1.5 px-2.5 py-2 xl:px-3 text-[12px] xl:text-[13px] font-bold transition-all whitespace-nowrap overflow-hidden text-ellipsis ${pathname === link.href ? 'bg-white text-[#115d9a] shadow-sm' : 'text-slate-500 hover:text-[#115d9a] hover:bg-white/50'}`}
+                                >
+                                    <link.icon className={`w-3.5 h-3.5 xl:w-4 xl:h-4 flex-shrink-0 ${pathname === link.href ? 'text-[#115d9a]' : 'text-slate-400'}`} />
+                                    {link.name}
+                                </Link>
+                            ))}
+                        </div>
                     </div>
 
                     {/* الأزرار اليسرى */}
-                    <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 z-[1001]">
+                    <div className="flex items-center justify-end gap-2 xl:gap-3 flex-shrink-0 z-[1001]">
                         <div className="flex items-center gap-1.5">
                             <Link href="/notifications" className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-[#115d9a] transition-all relative">
                                 <Bell className="w-5 h-5" />
@@ -110,25 +117,29 @@ export default function Navbar() {
                                 )}
                             </Link>
                         </div>
+
                         <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>
+
                         <Link href="/profile" className="flex items-center gap-2 p-1 pl-3 rounded-2xl border border-slate-200 hover:bg-white hover:shadow-sm transition-all group bg-slate-50/50">
-                            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 group-hover:bg-[#115d9a] group-hover:text-white transition-colors overflow-hidden shadow-sm">
-                                <User className="w-5 h-5" />
+                            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 group-hover:bg-[#115d9a] group-hover:text-white transition-colors overflow-hidden shadow-sm flex-shrink-0">
+                                <User className="w-4 h-4" />
                             </div>
-                            <div className="hidden lg:flex flex-col items-start leading-none gap-0.5">
-                                <span className="text-[11px] font-black text-slate-800">عبدالمجيد</span>
+                            <div className="hidden md:flex flex-col items-start leading-none gap-0.5">
+                                <span className="text-[11px] font-black text-slate-800">حسابي</span>
                                 <span className="text-[9px] text-slate-500 font-bold group-hover:text-[#115d9a] transition-colors">ملف شخصي</span>
                             </div>
                         </Link>
-                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="xl:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-[#115d9a] text-white shadow-lg active:scale-95 transition-transform z-[1002]">
+
+                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-[#115d9a] text-white shadow-lg active:scale-95 transition-transform z-[1002]">
                             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                         </button>
                     </div>
                 </div>
             </div>
 
+            {/* القائمة الجانبية للجوال */}
             {isMobileMenuOpen && (
-                <div className="xl:hidden absolute top-full left-0 right-0 bg-white border-t border-slate-100 shadow-2xl p-4 max-h-[85vh] overflow-y-auto z-[998]">
+                <div className="lg:hidden absolute top-full left-0 right-0 bg-white border-t border-slate-100 shadow-2xl p-4 max-h-[85vh] overflow-y-auto z-[998]">
                     <div className="grid grid-cols-1 gap-2">
                         {NAV_LINKS.map((link) => (
                             <Link key={link.href} href={link.href} className={`flex items-center gap-4 p-4 rounded-2xl font-bold transition-all ${pathname === link.href ? 'bg-blue-50 text-[#115d9a]' : 'hover:bg-slate-50 text-slate-700'}`} onClick={() => setIsMobileMenuOpen(false)}>
