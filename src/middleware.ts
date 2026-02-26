@@ -1,65 +1,49 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+
 export async function middleware(request: NextRequest) {
-    let response = NextResponse.next({
+    // Create an unmodified response
+    let supabaseResponse = NextResponse.next({
         request: {
             headers: request.headers,
         },
     })
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    // Fail Fast: Ensure environment variables are present
+
     if (!supabaseUrl || !supabaseKey) {
-        return response;
+        return supabaseResponse;
     }
+
     const supabase = createServerClient(
-        supabaseUrl!, // Non-null assertion safe because we check above implies we accepted risk or it's present
-        supabaseKey!,
+        supabaseUrl,
+        supabaseKey,
         {
             cookies: {
-                get(name: string) {
-                    return request.cookies.get(name)?.value
+                getAll() {
+                    return request.cookies.getAll()
                 },
-                set(name: string, value: string, options: CookieOptions) {
-                    request.cookies.set({
-                        name,
-                        value,
-                        ...options,
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+                    supabaseResponse = NextResponse.next({
+                        request,
                     })
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    })
-                    response.cookies.set({
-                        name,
-                        value,
-                        ...options,
-                    })
-                },
-                remove(name: string, options: CookieOptions) {
-                    request.cookies.set({
-                        name,
-                        value: '',
-                        ...options,
-                    })
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    })
-                    response.cookies.set({
-                        name,
-                        value: '',
-                        ...options,
-                    })
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        supabaseResponse.cookies.set(name, value, options)
+                    )
                 },
             },
         }
     )
+
+    // Refresh session if expired - this is required for Server Components
+    // Using getUser() ensures the session is valid and refreshes it if needed
     await supabase.auth.getUser()
-    return response
+
+    return supabaseResponse
 }
+
 export const config = {
     matcher: [
         /*
@@ -67,10 +51,9 @@ export const config = {
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
-         * - /api (API routes)
-         * - /robots.txt, /sitemap.xml
-         * - /static, /images (public folders)
+         * - api/ (API routes)
+         * Feel free to modify this pattern to include more paths.
          */
-        '/((?!_next/static|_next/image|_next/webpack-hmr|favicon.ico|api/|robots.txt|sitemap.xml|static/|images/|manifest.webmanifest|service-worker.js|.well-known/).*)',
+        '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$).*)',
     ],
 }
