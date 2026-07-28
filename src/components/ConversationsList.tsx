@@ -1,15 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, User, PenSquare, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ConversationsList() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = getSupabaseBrowserClient();
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeUserId = searchParams.get('user_id');

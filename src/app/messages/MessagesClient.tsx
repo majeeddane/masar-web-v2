@@ -3,7 +3,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import ConversationsList from '@/components/ConversationsList';
 import ChatInterface from '@/components/ChatInterface';
-import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { Home, MessageSquare, User, Briefcase } from 'lucide-react';
 
 // 1. Internal Component
@@ -19,10 +19,7 @@ function MessagesContent() {
 
     // Fetch User
     useEffect(() => {
-        const supabase = createBrowserClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        const supabase = getSupabaseBrowserClient();
         supabase.auth.getUser().then(({ data }) => {
             setUser(data.user);
         });

@@ -1,23 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ArrowRight, MapPin, Clock, Loader2, Search, Briefcase, ChevronLeft, Filter
 } from 'lucide-react';
-import { SAUDI_CITIES } from '@/lib/constants'; // تأكد أن ملف الثوابت موجود، أو سأضيف القائمة يدوياً بالأسفل للأمان
+import { SAUDI_CITIES } from '@/lib/constants';
 
 export default function CategoryFeedPage() {
     const params = useParams();
     const router = useRouter();
     const categoryName = decodeURIComponent(params.category as string);
 
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getSupabaseBrowserClient();
 
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);

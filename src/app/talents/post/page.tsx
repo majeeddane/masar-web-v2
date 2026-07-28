@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import {
     Briefcase, MapPin, Phone, Mail, Link as LinkIcon,
@@ -22,10 +22,7 @@ const CATEGORIES_LIST = [
 
 export default function PostTalentPage() {
     const router = useRouter();
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getSupabaseBrowserClient();
 
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
