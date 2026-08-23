@@ -65,10 +65,18 @@ export default function NewJobPage() {
                 .from('jobs')
                 .insert({
                     ...formData,
+                    company: (formData as any).company || formData.title,
+                    company_name: (formData as any).company || formData.title,
                     location: formData.city,
+                    city: formData.city,
+                    contact_phone: formData.phone_number || null,
+                    phone_number: formData.phone_number || null,
+                    contact_email: formData.contact_email || null,
                     salary_min: formData.salary_min ? Number(formData.salary_min) : null,
                     salary_max: formData.salary_max ? Number(formData.salary_max) : null,
-                    user_id: user.id
+                    is_active: true,
+                    user_id: user.id,
+                    created_by: user.id
                 });
 
             if (insertError) throw insertError;
@@ -96,9 +104,13 @@ export default function NewJobPage() {
                                 المعلومات الأساسية
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="md:col-span-2">
+                                <div>
                                     <label className="block text-sm font-black text-slate-700 mb-2">مسمى الوظيفة *</label>
                                     <input type="text" name="title" required value={formData.title} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-[#115d9a] outline-none transition-all font-bold" placeholder="مثال: مهندس برمجيات" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-black text-slate-700 mb-2">اسم الشركة / الجهة *</label>
+                                    <input type="text" name="company" required value={(formData as any).company || ''} onChange={handleChange} className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-[#115d9a] outline-none transition-all font-bold" placeholder="اسم شركتك" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-black text-slate-700 mb-2">القسم *</label>

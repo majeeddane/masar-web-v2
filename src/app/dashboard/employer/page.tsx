@@ -36,7 +36,7 @@ export default async function EmployerDashboard() {
                         <h1 className="text-3xl font-black text-slate-900 mb-2">لوحة التحكم</h1>
                         <p className="text-slate-500">إدارة الوظائف والمتقدمين</p>
                     </div>
-                    <Link href="/dashboard/employer/post-job" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all">
+                    <Link href="/post/job" className="bg-[#115d9a] hover:bg-[#0e4d82] text-white font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all">
                         <Plus className="w-5 h-5" />
                         <span>نشر وظيفة جديدة</span>
                     </Link>

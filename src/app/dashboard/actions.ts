@@ -12,16 +12,19 @@ export async function deleteJob(jobId: string) {
         throw new Error('Unauthorized')
     }
 
-    // Delete the job
+    // Delete the job from jobs table
     const { error } = await supabase
-        .from('news')
+        .from('jobs')
         .delete()
         .eq('id', jobId)
-        .eq('author_id', user.id) // Security: Ensure user owns the job
+        .eq('user_id', user.id) // Security: Ensure user owns the job
 
     if (error) {
-        throw new Error('Failed to delete job')
+        throw new Error('Failed to delete job: ' + error.message)
     }
 
     revalidatePath('/dashboard')
+    revalidatePath('/my-jobs')
+    revalidatePath('/dashboard/my-jobs')
 }
+

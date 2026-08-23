@@ -149,13 +149,40 @@ export default function ProfessionalProfileSetup() {
         try {
             // حفظ البروفايل
             const { error: pErr } = await supabase.from('profiles').upsert({
-                id: user.id, full_name: profile.full_name, job_title: profile.headline,
-                location: profile.location, phone: profile.phone, website: profile.website,
-                linkedin: profile.linkedin, github: profile.github, bio: profile.bio,
-                skills: skills, avatar_url: profile.avatar_url, resume_url: profile.resume_url,
+                id: user.id,
+                user_id: user.id,
+                full_name: profile.full_name,
+                job_title: profile.headline,
+                location: profile.location,
+                phone: profile.phone,
+                website: profile.website,
+                linkedin: profile.linkedin,
+                github: profile.github,
+                bio: profile.bio,
+                skills: skills,
+                avatar_url: profile.avatar_url,
+                resume_url: profile.resume_url,
                 updated_at: new Date().toISOString()
             });
-            if (pErr) throw pErr;
+            if (pErr) {
+                // Try fallback with only id
+                const { error: pErr2 } = await supabase.from('profiles').upsert({
+                    id: user.id,
+                    full_name: profile.full_name,
+                    job_title: profile.headline,
+                    location: profile.location,
+                    phone: profile.phone,
+                    website: profile.website,
+                    linkedin: profile.linkedin,
+                    github: profile.github,
+                    bio: profile.bio,
+                    skills: skills,
+                    avatar_url: profile.avatar_url,
+                    resume_url: profile.resume_url,
+                    updated_at: new Date().toISOString()
+                });
+                if (pErr2) throw pErr2;
+            }
 
             // حفظ الخبرات الجديدة
             const newExps = experiences.filter(e => e.id?.startsWith('temp-'));

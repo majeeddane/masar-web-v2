@@ -92,10 +92,13 @@ export default function EditJobPage() {
                     title: formData.title,
                     job_type: formData.job_type,
                     location: formData.location,
+                    city: formData.location,
                     salary_range: formData.salary_range,
                     description: formData.description,
                     application_link: formData.application_link || null,
+                    source_url: formData.application_link || null,
                     contact_phone: formData.contact_phone || null,
+                    phone_number: formData.contact_phone || null,
                     contact_email: formData.contact_email || null,
                 })
                 .eq('id', id);

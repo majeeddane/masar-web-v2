@@ -1,23 +1,47 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import { ArrowRight, CheckCircle2, Loader2, LogIn, Briefcase, Building2, MapPin, AlignLeft, Phone, Mail } from 'lucide-react';
+import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
+import { ArrowRight, CheckCircle2, Loader2, LogIn, Briefcase, Building2, MapPin, AlignLeft, Phone, Mail, Globe, DollarSign, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { SAUDI_CITIES } from '@/lib/constants';
+
+const CATEGORY_OPTIONS = [
+    'سياحة ومطاعم', 'مهندس', 'مبيعات وتسويق', 'حرفيين', 'مقاولات',
+    'طب وتمريض', 'عمال دليفري', 'حراسة وأمن', 'تزين وتجميل',
+    'تعليم وتدريس', 'كمبيوتر وشبكات', 'شراكة', 'موارد بشرية',
+    'حدائق ومناظر طبيعية', 'سكرتارية', 'لياقة بدنية', 'فنون جميلة',
+    'سياحة وسفر', 'حضانة أطفال', 'أزياء', 'سائق', 'حسابات',
+    'عمال', 'إدارة', 'تقني', 'خدمة الزبائن', 'موظفين',
+    'مدخل بيانات', 'تصميم', 'عمال تنظيف', 'خياطين', 'عمالة منزلية',
+    'تقنيين تكييف وتبريد', 'برمجة', 'محاماة وقانون', 'مونتاج وإخراج',
+    'تصميم مواقع', 'علاقات عامة', 'مترجمين', 'محررين'
+];
 
 export default function PostJobPage() {
+    const router = useRouter();
+    const supabase = getSupabaseBrowserClient();
+
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); // null = checking
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [errorMsg, setErrorMsg] = useState('');
 
     // Form State
     const [formData, setFormData] = useState({
         title: '',
         company: '',
-        location: '',
+        category: '',
+        city: '',
+        job_type: 'Full-time',
+        experience_level: 'Entry Level',
+        salary_min: '',
+        salary_max: '',
         description: '',
-        contact_phone: '',
-        contact_email: ''
+        phone_number: '',
+        contact_email: '',
+        application_link: ''
     });
 
     // Check Auth on Mount
@@ -27,41 +51,66 @@ export default function PostJobPage() {
             setIsAuthenticated(!!user);
         };
         checkUser();
-    }, []);
+    }, [supabase]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setErrorMsg('');
+
+        if (!formData.title.trim() || !formData.company.trim() || !formData.category || !formData.city || !formData.description.trim()) {
+            setErrorMsg('يرجى ملء جميع الحقول المطلوبة (مسمى الوظيفة، اسم الشركة، القسم، المدينة، والوصف).');
+            setLoading(false);
+            return;
+        }
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
 
-            if (!user) throw new Error('User not found');
+            if (!user) {
+                setErrorMsg('يجب تسجيل الدخول لنشر وظيفة.');
+                setIsAuthenticated(false);
+                setLoading(false);
+                return;
+            }
 
-            const { error } = await supabase.from('news').insert([{
-                title: formData.title,
-                original_text: formData.company,
-                location: formData.location,
-                description: formData.description,
-                contact_phone: formData.contact_phone,
-                contact_email: formData.contact_email,
-                published: new Date().toISOString(),
-                source_url: 'https://masar-sa.com',
-                image_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
-                author_id: user.id
-            }]);
+            const payload: any = {
+                title: formData.title.trim(),
+                company: formData.company.trim(),
+                company_name: formData.company.trim(),
+                location: formData.city,
+                city: formData.city,
+                category: formData.category,
+                job_type: formData.job_type,
+                experience_level: formData.experience_level,
+                salary_min: formData.salary_min ? Number(formData.salary_min) : null,
+                salary_max: formData.salary_max ? Number(formData.salary_max) : null,
+                description: formData.description.trim(),
+                phone_number: formData.phone_number.trim() || null,
+                contact_phone: formData.phone_number.trim() || null,
+                contact_email: formData.contact_email.trim() || null,
+                application_link: formData.application_link.trim() || null,
+                source_url: formData.application_link.trim() || null,
+                is_active: true,
+                user_id: user.id,
+                created_by: user.id
+            };
 
-            if (error) throw error;
+            const { error: insertError } = await supabase.from('jobs').insert(payload);
+
+            if (insertError) {
+                console.error('Insert error in jobs table:', insertError);
+                throw new Error(insertError.message || 'حدث خطأ في قاعدة البيانات أثناء نشر الوظيفة');
+            }
+
             setSuccess(true);
-        } catch (error) {
-
+        } catch (error: any) {
             console.error('Error posting job:', error);
-            alert('حدث خطأ أثناء نشر الوظيفة. يرجى المحاولة مرة أخرى.');
+            setErrorMsg(error.message || 'حدث خطأ غير متوقع أثناء نشر الوظيفة. يرجى المحاولة مرة أخرى.');
         } finally {
             setLoading(false);
         }
@@ -80,19 +129,22 @@ export default function PostJobPage() {
     if (!isAuthenticated) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-center font-sans" dir="rtl">
-                <div className="bg-white p-12 rounded-3xl shadow-xl max-w-lg w-full border border-slate-100">
-                    <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="bg-white p-10 md:p-12 rounded-3xl shadow-xl max-w-lg w-full border border-slate-100">
+                    <div className="w-20 h-20 bg-blue-50 text-[#115d9a] rounded-full flex items-center justify-center mx-auto mb-6">
                         <LogIn className="w-10 h-10" />
                     </div>
-                    <h2 className="text-3xl font-bold text-slate-900 mb-4">يجب تسجيل الدخول</h2>
-                    <p className="text-slate-500 mb-10 text-lg leading-relaxed">
-                        عذراً، لا يمكنك نشر وظيفة جديدة إلا بعد تسجيل الدخول إلى حسابك. هذه الخطوة ضرورية لضمان جودة المحتوى.
+                    <h2 className="text-3xl font-black text-slate-900 mb-4">يجب تسجيل الدخول أولاً</h2>
+                    <p className="text-slate-500 mb-8 text-base leading-relaxed">
+                        لتتمكن من نشر وظيفة جديدة وإدارتها لاحقاً، يرجى تسجيل الدخول إلى حسابك أو إنشاء حساب جديد مجاناً.
                     </p>
-                    <div className="flex flex-col gap-4">
-                        <Link href="/login" className="block w-full py-4 bg-blue-900 text-white rounded-xl font-bold hover:bg-blue-800 transition-colors text-lg shadow-lg hover:shadow-blue-900/20">
+                    <div className="flex flex-col gap-3">
+                        <Link href="/login" className="block w-full py-4 bg-[#115d9a] text-white rounded-2xl font-bold hover:bg-[#0e4d82] transition-colors text-lg shadow-lg">
                             تسجيل الدخول
                         </Link>
-                        <Link href="/" className="block w-full py-4 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold hover:bg-slate-50 transition-colors">
+                        <Link href="/signup" className="block w-full py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-colors">
+                            إنشاء حساب جديد
+                        </Link>
+                        <Link href="/" className="block w-full py-3 text-slate-400 font-bold hover:text-slate-600 transition-colors text-sm">
                             العودة للرئيسية
                         </Link>
                     </div>
@@ -105,15 +157,20 @@ export default function PostJobPage() {
     if (success) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-center font-sans" dir="rtl">
-                <div className="bg-white p-12 rounded-3xl shadow-xl max-w-md w-full animate-fade-in-up border border-green-100">
+                <div className="bg-white p-10 md:p-12 rounded-3xl shadow-xl max-w-md w-full animate-fade-in-up border border-green-100">
                     <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                         <CheckCircle2 className="w-12 h-12" />
                     </div>
-                    <h2 className="text-3xl font-bold text-slate-900 mb-3">تم النشر بنجاح!</h2>
-                    <p className="text-slate-500 mb-8 text-lg">إعلانك أصبح مباشراً الآن على منصة مسار. شكراً لثقتك بنا.</p>
-                    <Link href="/dashboard" className="block w-full py-4 bg-blue-900 text-white rounded-xl font-bold hover:bg-blue-800 transition-colors text-lg shadow-lg">
-                        الذهاب للوحة التحكم
-                    </Link>
+                    <h2 className="text-3xl font-black text-slate-900 mb-3">تم نشر الوظيفة بنجاح!</h2>
+                    <p className="text-slate-500 mb-8 text-base">إعلانك متاح الآن للباحثين عن عمل في قسم الوظائف.</p>
+                    <div className="flex flex-col gap-3">
+                        <Link href="/jobs" className="block w-full py-4 bg-[#115d9a] text-white rounded-2xl font-bold hover:bg-[#0e4d82] transition-colors text-lg shadow-lg">
+                            تصفح الوظائف
+                        </Link>
+                        <Link href="/dashboard" className="block w-full py-3 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-colors">
+                            الذهاب للوحة التحكم
+                        </Link>
+                    </div>
                 </div>
             </div>
         );
@@ -121,28 +178,36 @@ export default function PostJobPage() {
 
     // 4. Form State
     return (
-        <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-6 font-sans text-slate-900" dir="rtl">
+        <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-6 font-sans text-slate-900 pt-28" dir="rtl">
             <div className="max-w-4xl mx-auto">
 
-                <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold mb-8 transition-colors">
+                <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-500 hover:text-[#115d9a] font-bold mb-6 transition-colors">
                     <ArrowRight className="w-5 h-5" />
                     إلغاء وعودة
                 </Link>
 
                 <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-                    <div className="bg-blue-900 text-white p-10 relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-x-10 -translate-y-10"></div>
-                        <h1 className="text-3xl font-black mb-3 relative z-10">إضافة وظيفة جديدة</h1>
-                        <p className="text-blue-100 text-lg relative z-10">انشر إعلانك مجاناً ليصل إلى آلاف الباحثين عن عمل فوراً.</p>
+                    <div className="bg-gradient-to-r from-[#115d9a] to-blue-700 text-white p-8 md:p-10 relative overflow-hidden">
+                        <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-1.5 rounded-full text-blue-200 text-xs font-bold mb-3">
+                            <Sparkles className="w-3.5 h-3.5" /> النشر مجاني وفوري
+                        </div>
+                        <h1 className="text-3xl font-black mb-2 relative z-10">إضافة وظيفة شاغرة</h1>
+                        <p className="text-blue-100 text-base relative z-10">انشر إعلانك ليصل إلى آلاف الكفاءات والباحثين عن عمل في السعودية.</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-8 md:p-10 space-y-8">
 
+                        {errorMsg && (
+                            <div className="p-4 bg-red-50 border-2 border-red-200 text-red-700 rounded-2xl font-bold text-sm text-center">
+                                ⚠️ {errorMsg}
+                            </div>
+                        )}
+
                         {/* Basic Info */}
                         <div className="space-y-6">
                             <h3 className="text-xl font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
-                                <Building2 className="w-5 h-5 text-blue-600" />
-                                معلومات الوظيفة
+                                <Building2 className="w-5 h-5 text-[#115d9a]" />
+                                معلومات الوظيفة الأساسية
                             </h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -156,13 +221,13 @@ export default function PostJobPage() {
                                             onChange={handleChange}
                                             required
                                             type="text"
-                                            className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-medium"
-                                            placeholder="مثال: مدير تسويق"
+                                            className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-bold"
+                                            placeholder="مثال: مهندس برمجيات"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="label mb-2 block font-bold text-sm text-slate-700">اسم الشركة <span className="text-red-500">*</span></label>
+                                    <label className="label mb-2 block font-bold text-sm text-slate-700">اسم الشركة / الجهة <span className="text-red-500">*</span></label>
                                     <div className="relative">
                                         <Building2 className="absolute top-3.5 right-4 w-5 h-5 text-slate-400" />
                                         <input
@@ -171,60 +236,111 @@ export default function PostJobPage() {
                                             onChange={handleChange}
                                             required
                                             type="text"
-                                            className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-medium"
-                                            placeholder="اسم شركتك"
+                                            className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-bold"
+                                            placeholder="مثال: شركة المسار المتقدمة"
                                         />
                                     </div>
                                 </div>
-                            </div>
 
-                            <div>
-                                <label className="label mb-2 block font-bold text-sm text-slate-700">المدينة / منطقة العمل <span className="text-red-500">*</span></label>
-                                <div className="relative">
-                                    <MapPin className="absolute top-3.5 right-4 w-5 h-5 text-slate-400" />
-                                    <input
-                                        name="location"
-                                        value={formData.location}
-                                        onChange={handleChange}
+                                <div>
+                                    <label className="label mb-2 block font-bold text-sm text-slate-700">القسم المهني <span className="text-red-500">*</span></label>
+                                    <select
+                                        name="category"
                                         required
-                                        type="text"
-                                        className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-medium"
-                                        placeholder="الرياض - حي العليا"
-                                    />
+                                        value={formData.category}
+                                        onChange={handleChange}
+                                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                                    >
+                                        <option value="">اختر القسم المناسب</option>
+                                        {CATEGORY_OPTIONS.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="label mb-2 block font-bold text-sm text-slate-700">المدينة <span className="text-red-500">*</span></label>
+                                    <select
+                                        name="city"
+                                        required
+                                        value={formData.city}
+                                        onChange={handleChange}
+                                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                                    >
+                                        <option value="">اختر المدينة</option>
+                                        {SAUDI_CITIES.map(city => <option key={city} value={city}>{city}</option>)}
+                                    </select>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Description */}
+                        {/* Details & Salary */}
                         <div className="space-y-6">
                             <h3 className="text-xl font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
-                                <AlignLeft className="w-5 h-5 text-blue-600" />
-                                التفاصيل والمتطلبات
+                                <DollarSign className="w-5 h-5 text-emerald-600" />
+                                تفاصيل العمل والراتب
                             </h3>
 
-                            <div>
-                                <label className="label mb-2 block font-bold text-sm text-slate-700">الوصف الوظيفي <span className="text-red-500">*</span></label>
-                                <textarea
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    required
-                                    rows={8}
-                                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-medium leading-relaxed"
-                                    placeholder="اكتب وصفاً تفصيلياً للمهام والمسؤوليات، والشروط المطلوبة..."
-                                />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="label mb-2 block font-bold text-sm text-slate-700">نوع الدوام</label>
+                                    <select
+                                        name="job_type"
+                                        value={formData.job_type}
+                                        onChange={handleChange}
+                                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                                    >
+                                        <option value="Full-time">دوام كامل</option>
+                                        <option value="Part-time">دوام جزئي</option>
+                                        <option value="Remote">عن بعد</option>
+                                        <option value="Contract">عقد مؤقت</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex gap-4">
+                                    <div className="flex-1">
+                                        <label className="label mb-2 block font-bold text-sm text-slate-700">الراتب المتوقع (من)</label>
+                                        <input
+                                            type="number"
+                                            name="salary_min"
+                                            value={formData.salary_min}
+                                            onChange={handleChange}
+                                            className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none"
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="label mb-2 block font-bold text-sm text-slate-700">(إلى)</label>
+                                        <input
+                                            type="number"
+                                            name="salary_max"
+                                            value={formData.salary_max}
+                                            onChange={handleChange}
+                                            className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none"
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="label mb-2 block font-bold text-sm text-slate-700">الوصف الوظيفي والمتطلبات <span className="text-red-500">*</span></label>
+                                    <textarea
+                                        name="description"
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        required
+                                        rows={6}
+                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium leading-relaxed"
+                                        placeholder="اكتب وصفاً تفصيلياً للمهام والمسؤوليات، والشروط والخبرات المطلوبة..."
+                                    />
+                                </div>
                             </div>
                         </div>
 
                         {/* Contact Info */}
                         <div className="space-y-6">
                             <h3 className="text-xl font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
-                                <Phone className="w-5 h-5 text-blue-600" />
-                                بيانات التواصل
+                                <Phone className="w-5 h-5 text-orange-500" />
+                                بيانات التواصل مع المتقدمين (اختياري)
                             </h3>
-                            <p className="text-sm text-slate-500 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                                هذه البيانات ستظهر للمرشحين للتواصل معك مباشرة. يمكنك ترك أحد الحقول فارغاً.
-                            </p>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
@@ -232,12 +348,13 @@ export default function PostJobPage() {
                                     <div className="relative">
                                         <Phone className="absolute top-3.5 right-4 w-5 h-5 text-slate-400" />
                                         <input
-                                            name="contact_phone"
-                                            value={formData.contact_phone}
+                                            name="phone_number"
+                                            value={formData.phone_number}
                                             onChange={handleChange}
                                             type="tel"
-                                            className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-medium"
+                                            className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
                                             placeholder="05xxxxxxxx"
+                                            dir="ltr"
                                         />
                                     </div>
                                 </div>
@@ -250,8 +367,24 @@ export default function PostJobPage() {
                                             value={formData.contact_email}
                                             onChange={handleChange}
                                             type="email"
-                                            className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-medium"
+                                            className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
                                             placeholder="jobs@company.com"
+                                            dir="ltr"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="label mb-2 block font-bold text-sm text-slate-700">رابط خارجي للتقديم (إن وجد)</label>
+                                    <div className="relative">
+                                        <Globe className="absolute top-3.5 right-4 w-5 h-5 text-slate-400" />
+                                        <input
+                                            name="application_link"
+                                            value={formData.application_link}
+                                            onChange={handleChange}
+                                            type="url"
+                                            className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
+                                            placeholder="https://company.com/careers/job123"
+                                            dir="ltr"
                                         />
                                     </div>
                                 </div>
@@ -259,11 +392,11 @@ export default function PostJobPage() {
                         </div>
 
                         {/* Submit */}
-                        <div className="pt-6">
+                        <div className="pt-4">
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xl shadow-xl hover:shadow-blue-600/30 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed transform hover:-translate-y-1 active:translate-y-0"
+                                className="w-full py-5 bg-[#115d9a] hover:bg-[#0e4d82] text-white rounded-2xl font-black text-xl shadow-xl hover:shadow-blue-900/30 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0"
                             >
                                 {loading ? (
                                     <>
@@ -274,9 +407,6 @@ export default function PostJobPage() {
                                     'نشر الوظيفة الآن (مجاناً)'
                                 )}
                             </button>
-                            <p className="text-center text-xs text-slate-400 mt-4">
-                                بمجرد النشر، سيتم عرض الوظيفة في القائمة العامة وتصبح متاحة للتقديم.
-                            </p>
                         </div>
                     </form>
                 </div>
