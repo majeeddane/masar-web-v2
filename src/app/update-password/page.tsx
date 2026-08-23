@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { getArabicErrorMessage } from '@/lib/errorHandler';
 
 export default function UpdatePasswordPage() {
     const router = useRouter();
@@ -23,7 +24,13 @@ export default function UpdatePasswordPage() {
         setError(null);
 
         if (password !== confirmPassword) {
-            setError('كلمة المرور غير متطابقة');
+            setError('كلمة المرور وتأكيدها غير متطابقين');
+            setLoading(false);
+            return;
+        }
+
+        if (password.length < 6) {
+            setError('يجب أن تتكون كلمة المرور من 6 خانات على الأقل');
             setLoading(false);
             return;
         }
@@ -34,13 +41,12 @@ export default function UpdatePasswordPage() {
             if (error) throw error;
 
             setSuccess(true);
-            // Optional: Redirect after a few seconds
             setTimeout(() => {
                 router.push('/dashboard');
-            }, 3000);
+            }, 2500);
         } catch (err: any) {
             console.error('Update Password Error:', err);
-            setError(err.message || 'حدث خطأ أثناء تحديث كلمة المرور');
+            setError(getArabicErrorMessage(err));
         } finally {
             setLoading(false);
         }

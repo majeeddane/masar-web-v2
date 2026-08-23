@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import { Mail, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { getArabicErrorMessage } from '@/lib/errorHandler';
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
@@ -24,7 +25,7 @@ export default function ForgotPasswordPage() {
 
 
         try {
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
                 redirectTo: redirectUrl,
             });
 
@@ -33,8 +34,7 @@ export default function ForgotPasswordPage() {
             setSuccess(true);
         } catch (err: any) {
             console.error('Reset Password Error:', err);
-            // Show exact error as requested for debugging
-            setError(err.message || 'حدث خطأ أثناء إرسال الرابط.');
+            setError(getArabicErrorMessage(err));
         } finally {
             setLoading(false);
         }

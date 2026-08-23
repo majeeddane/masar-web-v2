@@ -4,6 +4,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
+import { getArabicErrorMessage } from '@/lib/errorHandler';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -22,7 +23,7 @@ export default function LoginPage() {
         try {
             // 1. محاولة تسجيل الدخول
             const { data, error: signInError } = await supabase.auth.signInWithPassword({
-                email,
+                email: email.trim(),
                 password,
             });
 
@@ -43,15 +44,14 @@ export default function LoginPage() {
 
                 // المنطق الذكي للتوجيه
                 if (profile && (profile.full_name || profile.job_title)) {
-                    // إذا كان لديه اسم أو وظيفة -> خذه للرئيسية
                     router.push('/');
                 } else {
-                    // إذا كان ملفه فارغاً -> خذه لإكمال البيانات
                     router.push('/talents/join');
                 }
             }
         } catch (err: any) {
-            setError(err.message || 'حدث خطأ أثناء تسجيل الدخول');
+            console.error('Login error:', err);
+            setError(getArabicErrorMessage(err));
         } finally {
             setLoading(false);
         }

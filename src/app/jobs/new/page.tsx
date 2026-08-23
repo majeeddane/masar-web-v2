@@ -7,6 +7,7 @@ import {
     ArrowRight, Building2, Phone, Mail, Globe, Clock, CheckCircle2
 } from 'lucide-react';
 import { SAUDI_CITIES } from '@/lib/constants';
+import { getArabicErrorMessage } from '@/lib/errorHandler';
 
 // ✅ القائمة الموحدة لضمان ظهور الوظائف في أقسامها الصحيحة
 const CATEGORY_OPTIONS = [
@@ -83,7 +84,7 @@ export default function NewJobPage() {
             router.push('/jobs');
             router.refresh();
         } catch (err: any) {
-            setError(err.message || 'حدث خطأ أثناء نشر الوظيفة');
+            setError(getArabicErrorMessage(err));
         } finally {
             setLoading(false);
         }

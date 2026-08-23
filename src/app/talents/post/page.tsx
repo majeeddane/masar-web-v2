@@ -9,6 +9,7 @@ import {
     UploadCloud, FileText, X, Loader2, Sparkles, Send, LogIn, CheckCircle2
 } from 'lucide-react';
 import { SAUDI_CITIES } from '@/lib/constants';
+import { getArabicErrorMessage } from '@/lib/errorHandler';
 
 // قائمة الأقسام
 const CATEGORIES_LIST = [
@@ -140,8 +141,8 @@ export default function PostTalentPage() {
             router.push('/talents');
             router.refresh();
         } catch (error: any) {
-            console.error(error);
-            setErrorMsg(error.message || 'حدث خطأ أثناء النشر. يرجى المحاولة مرة أخرى.');
+            console.error('Talent post error:', error);
+            setErrorMsg(getArabicErrorMessage(error));
         } finally {
             setLoading(false);
         }

@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, Loader2, LogIn, Briefcase, Building2, MapPin,
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SAUDI_CITIES } from '@/lib/constants';
+import { getArabicErrorMessage } from '@/lib/errorHandler';
 
 const CATEGORY_OPTIONS = [
     'سياحة ومطاعم', 'مهندس', 'مبيعات وتسويق', 'حرفيين', 'مقاولات',
@@ -110,7 +111,7 @@ export default function PostJobPage() {
             setSuccess(true);
         } catch (error: any) {
             console.error('Error posting job:', error);
-            setErrorMsg(error.message || 'حدث خطأ غير متوقع أثناء نشر الوظيفة. يرجى المحاولة مرة أخرى.');
+            setErrorMsg(getArabicErrorMessage(error));
         } finally {
             setLoading(false);
         }
