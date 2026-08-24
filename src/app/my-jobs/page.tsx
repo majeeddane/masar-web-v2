@@ -95,7 +95,7 @@ export default function MyJobsPage() {
                             <p className="text-gray-500 mt-1 mr-9">إدارة الوظائف التي قمت بنشرها</p>
                         </div>
 
-                        <Link href="/jobs/new" className="hidden sm:flex bg-[#115d9a] hover:bg-[#0e4d82] text-white px-5 py-2.5 rounded-xl font-medium items-center gap-2 transition-colors shadow-sm">
+                        <Link href="/post/job" className="hidden sm:flex bg-[#115d9a] hover:bg-[#0e4d82] text-white px-5 py-2.5 rounded-xl font-medium items-center gap-2 transition-colors shadow-sm">
                             <Plus className="h-5 w-5" />
                             <span>نشر وظيفة جديدة</span>
                         </Link>
@@ -202,7 +202,7 @@ export default function MyJobsPage() {
                             ابدأ بنشر وظيفتك الأولى واجذب أفضل الكفاءات لفريقك.
                         </p>
                         <Link
-                            href="/jobs/new"
+                            href="/post/job"
                             className="bg-[#115d9a] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#0e4d82] transition-colors flex items-center gap-2"
                         >
                             <Plus className="h-5 w-5" />

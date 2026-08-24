@@ -119,7 +119,7 @@ export default function PostTalentPage() {
                 return;
             }
 
-            const { error } = await supabase
+            let { error } = await supabase
                 .from('talent_posts')
                 .insert({
                     user_id: user.id,
@@ -133,9 +133,23 @@ export default function PostTalentPage() {
                     cv_url: formData.cv_url || null
                 });
 
+            if (error && (error.message?.includes('column') || error.code === '42703' || error.code === 'PGRST204')) {
+                console.warn('Retrying talent_posts insert with aliases...', error.message);
+                const retry = await supabase.from('talent_posts').insert({
+                    user_id: user.id,
+                    title: formData.post_title.trim(),
+                    category: formData.category,
+                    city: formData.city,
+                    description: formData.content.trim(),
+                    phone_number: formData.phone_number.trim(),
+                    contact_email: formData.contact_email.trim() || null
+                } as any);
+                error = retry.error;
+            }
+
             if (error) {
-                console.error('Database insert error:', error);
-                throw new Error(error.message || 'حدث خطأ في قاعدة البيانات أثناء نشر الإعلان');
+                console.error('Database insert error in talent_posts:', error);
+                throw error;
             }
 
             router.push('/talents');

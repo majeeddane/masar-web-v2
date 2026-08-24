@@ -28,7 +28,7 @@ export default async function EmployerDashboard() {
                         <p className="text-gray-500">أدر وظائفك وشاهد طلبات التقديم</p>
                     </div>
                     <Link
-                        href="/jobs/new"
+                        href="/post/job"
                         className="bg-[#0084db] text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#006bb3] transition-colors shadow-lg shadow-blue-100"
                     >
                         <Plus className="w-5 h-5" /> نشر وظيفة
@@ -95,7 +95,7 @@ export default async function EmployerDashboard() {
                             <Briefcase className="w-16 h-16 text-gray-200 mx-auto mb-4" />
                             <h3 className="text-xl font-bold text-gray-900">لم تنشر أي وظائف بعد</h3>
                             <p className="text-gray-500 mb-6 mt-2">ابدأ بنشر أول وظيفة واستقبل طلبات المبدعين</p>
-                            <Link href="/jobs/new" className="text-[#0084db] font-bold hover:underline">
+                            <Link href="/post/job" className="text-[#0084db] font-bold hover:underline">
                                 نشر وظيفة جديدة
                             </Link>
                         </div>

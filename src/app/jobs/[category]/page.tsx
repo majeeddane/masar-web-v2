@@ -77,7 +77,7 @@ export default function JobCategoryFeed() {
                         </div>
 
                         <Link
-                            href="/jobs/new"
+                            href="/post/job"
                             className="bg-emerald-500 hover:bg-emerald-400 text-white py-4 px-10 rounded-[1.5rem] font-black shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 border border-emerald-400/20"
                         >
                             <Plus className="w-6 h-6" />

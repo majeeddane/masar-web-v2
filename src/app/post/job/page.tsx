@@ -79,33 +79,63 @@ export default function PostJobPage() {
                 return;
             }
 
-            const payload: any = {
+            // 1. Base standard payload
+            const basePayload: any = {
                 title: formData.title.trim(),
                 company: formData.company.trim(),
-                company_name: formData.company.trim(),
-                location: formData.city,
-                city: formData.city,
                 category: formData.category,
-                job_type: formData.job_type,
-                experience_level: formData.experience_level,
+                city: formData.city,
+                location: formData.city,
+                description: formData.description.trim(),
+                job_type: formData.job_type || 'Full-time',
+                experience_level: formData.experience_level || 'Entry Level',
                 salary_min: formData.salary_min ? Number(formData.salary_min) : null,
                 salary_max: formData.salary_max ? Number(formData.salary_max) : null,
-                description: formData.description.trim(),
                 phone_number: formData.phone_number.trim() || null,
-                contact_phone: formData.phone_number.trim() || null,
                 contact_email: formData.contact_email.trim() || null,
                 application_link: formData.application_link.trim() || null,
-                source_url: formData.application_link.trim() || null,
                 is_active: true,
-                user_id: user.id,
-                created_by: user.id
+                user_id: user.id
             };
 
-            const { error: insertError } = await supabase.from('jobs').insert(payload);
+            // 2. Try inserting full schema with compatibility aliases
+            let { error: insertError } = await supabase.from('jobs').insert({
+                ...basePayload,
+                company_name: formData.company.trim(),
+                contact_phone: formData.phone_number.trim() || null,
+                source_url: formData.application_link.trim() || null,
+                created_by: user.id
+            });
+
+            // 3. Fallback level 1: if extended columns (company_name, created_by, etc.) don't exist
+            if (insertError && (insertError.message?.includes('column') || insertError.code === '42703' || insertError.code === 'PGRST204')) {
+                console.warn('Retrying job insert with standard base schema...', insertError.message);
+                const retry1 = await supabase.from('jobs').insert(basePayload);
+                insertError = retry1.error;
+            }
+
+            // 4. Fallback level 2: if optional fields like job_type/salary columns don't exist in older table
+            if (insertError && (insertError.message?.includes('column') || insertError.code === '42703' || insertError.code === 'PGRST204')) {
+                console.warn('Retrying job insert with core minimal schema...', insertError.message);
+                const minimalPayload = {
+                    title: formData.title.trim(),
+                    company: formData.company.trim(),
+                    category: formData.category,
+                    location: formData.city,
+                    description: formData.description.trim(),
+                    phone_number: formData.phone_number.trim() || null,
+                    contact_email: formData.contact_email.trim() || null,
+                    application_link: formData.application_link.trim() || null,
+                    is_active: true,
+                    user_id: user.id
+                };
+                const retry2 = await supabase.from('jobs').insert(minimalPayload);
+                insertError = retry2.error;
+            }
 
             if (insertError) {
                 console.error('Insert error in jobs table:', insertError);
-                throw new Error(insertError.message || 'حدث خطأ في قاعدة البيانات أثناء نشر الوظيفة');
+                throw insertError;
             }
 
             setSuccess(true);

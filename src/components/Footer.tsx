@@ -45,7 +45,7 @@ export default function Footer() {
                     <ul className="space-y-4 text-sm">
                         <li><Link href="/jobs" className="hover:text-white hover:translate-x-[-4px] transition-all inline-block">تصفح الوظائف</Link></li>
                         <li><Link href="/talents" className="hover:text-white hover:translate-x-[-4px] transition-all inline-block">استكشف الكفاءات</Link></li>
-                        <li><Link href="/jobs/new" className="hover:text-white hover:translate-x-[-4px] transition-all inline-block">أعلن عن وظيفة</Link></li>
+                        <li><Link href="/post/job" className="hover:text-white hover:translate-x-[-4px] transition-all inline-block">أعلن عن وظيفة</Link></li>
                         <li><Link href="/dashboard" className="hover:text-white hover:translate-x-[-4px] transition-all inline-block">لوحة التحكم</Link></li>
                     </ul>
                 </div>

@@ -71,7 +71,7 @@ export default function JobsCategoriesPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full py-4 px-6 rounded-2xl bg-white text-slate-800 focus:outline-none font-bold shadow-inner"
                         />
-                        <Link href="/jobs/new" className="w-full sm:w-auto py-4 px-8 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black shadow-lg transition-all">
+                        <Link href="/post/job" className="w-full sm:w-auto py-4 px-8 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black shadow-lg transition-all">
                             + أضف وظيفة
                         </Link>
                     </div>

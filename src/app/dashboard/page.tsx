@@ -163,7 +163,7 @@ export default function DashboardPage() {
                     <div className="text-center py-20 bg-white rounded-3xl border border-gray-200 border-dashed">
                         <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-xl font-bold text-gray-900">لم تنشر أي وظائف بعد</h3>
-                        <Link href="/jobs/new" className="inline-block mt-4 bg-[#115d9a] text-white px-6 py-2 rounded-xl font-bold">
+                        <Link href="/post/job" className="inline-block mt-4 bg-[#115d9a] text-white px-6 py-2 rounded-xl font-bold">
                             انشر وظيفتك الأولى
                         </Link>
                     </div>
