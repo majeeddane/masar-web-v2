@@ -30,18 +30,11 @@ export default async function JobApplicantsPage({
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900" dir="rtl">
-            {/* Navbar */}
-            <nav className="fixed w-full z-50 bg-white border-b border-gray-100 shadow-sm h-20 flex items-center">
-                <div className="container mx-auto px-6 flex items-center justify-between">
-                    <Link href="/dashboard/employer" className="flex items-center gap-2 group text-slate-600 hover:text-blue-700 font-bold transition-colors">
-                        <ArrowRight className="w-5 h-5" />
-                        عودة للوحة التحكم
-                    </Link>
-                    <span className="text-xl font-black text-blue-900">مسار</span>
-                </div>
-            </nav>
-
-            <div className="pt-32 pb-20 container mx-auto px-6">
+            <div className="py-8 pb-20 container mx-auto px-6">
+                <Link href="/dashboard/employer" className="inline-flex items-center gap-2 group text-slate-600 hover:text-blue-700 font-bold transition-colors mb-6">
+                    <ArrowRight className="w-5 h-5" />
+                    عودة للوحة التحكم
+                </Link>
                 <div className="mb-8">
                     <h1 className="text-3xl font-black text-slate-900 mb-2">المتقدمين للوظيفة</h1>
                     <p className="text-slate-500 font-bold text-lg">{job?.title}</p>

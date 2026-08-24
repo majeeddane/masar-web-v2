@@ -25,17 +25,11 @@ export default function CVBuilderPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans" dir="rtl">
-            <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
-                <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-                    <Link href="/dashboard/seeker" className="flex items-center gap-2 text-slate-500 hover:text-blue-700 font-bold transition-colors">
-                        <ArrowRight className="w-5 h-5" />
-                        <span>العودة للوحة التحكم</span>
-                    </Link>
-                    <span className="text-xl font-black text-blue-900">بناء السيرة الذاتية</span>
-                </div>
-            </nav>
-
-            <div className="container mx-auto px-6 py-10">
+            <div className="container mx-auto px-6 py-8">
+                <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-500 hover:text-blue-700 font-bold transition-colors mb-6">
+                    <ArrowRight className="w-5 h-5" />
+                    <span>العودة للوحة التحكم</span>
+                </Link>
                 <div className="max-w-4xl mx-auto">
 
                     {/* Header */}

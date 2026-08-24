@@ -40,7 +40,7 @@ export default function JobDetailsPage() {
     const whatsappUrl = `https://wa.me/${(job.contact_phone || job.phone_number)?.replace(/\s/g, '')}?text=${whatsappMessage}`;
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-28 pb-12 px-4" dir="rtl">
+        <div className="min-h-screen bg-gray-50 pt-8 pb-12 px-4" dir="rtl">
             <div className="max-w-4xl mx-auto">
                 <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-500 mb-6 font-bold hover:text-emerald-600 transition-colors">
                     <ArrowRight className="w-5 h-5" /> العودة للنتائج

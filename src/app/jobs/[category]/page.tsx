@@ -51,8 +51,7 @@ export default function JobCategoryFeed() {
     if (!mounted) return <div className="min-h-screen bg-gray-50" />;
 
     return (
-        // ✅ إضافة pt-28 لمنع التداخل مع Navbar العلوي
-        <div className="min-h-screen bg-gray-50 font-sans pb-12 pt-28" dir="rtl">
+        <div className="min-h-screen bg-gray-50 font-sans pb-12 pt-8" dir="rtl">
 
             {/* Header القسم - زيادة الـ py-16 ليعطي مساحة كافية للنصوص */}
             <div className="bg-[#1e293b] text-white py-16 relative overflow-hidden shadow-lg border-b-4 border-emerald-500 rounded-[2.5rem] mx-4">

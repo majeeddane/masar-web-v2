@@ -62,7 +62,7 @@ export default function JobsCategoriesPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-20" dir="rtl">
-            <div className="relative bg-[#022c22] text-white pt-24 pb-32 overflow-hidden rounded-b-[4rem] border-b-8 border-emerald-500">
+            <div className="relative bg-[#022c22] text-white pt-8 pb-32 overflow-hidden rounded-b-[4rem] border-b-8 border-emerald-500">
                 <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
                     <h1 className="text-5xl md:text-7xl font-black mb-6">فرصك الوظيفية <span className="text-emerald-400">تبدأ هنا</span></h1>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto bg-white/5 p-2 rounded-3xl border border-white/10 backdrop-blur-sm">

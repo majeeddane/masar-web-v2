@@ -50,26 +50,17 @@ export default function UserHub() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900" dir="rtl">
-
-            {/* Top Bar */}
-            <nav className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-                <Link href="/" className="flex items-center gap-2 font-bold text-blue-900 text-xl">
-                    <Briefcase className="w-6 h-6" />
-                    <span>مسار</span>
-                </Link>
-                <div className="flex items-center gap-4">
-                    <button onClick={handleFetchJobs} disabled={fetching} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-                        {fetching ? <Loader2 className="w-4 h-4 animate-spin" /> : '🚀'}
-                        {fetching ? 'جاري البحث...' : 'Fetch Jobs Now'}
-                    </button>
-                    <button className="p-2 text-slate-400 hover:bg-slate-50 rounded-full"><Bell className="w-5 h-5" /></button>
-                    <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
-                        {userName.charAt(0).toUpperCase()}
-                    </div>
-                </div>
-            </nav>
-
             <div className="container mx-auto px-6 py-8">
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-900">الملف الشخصي</h1>
+                        <p className="text-slate-500 text-sm">إدارة حسابك والفرص الوظيفية</p>
+                    </div>
+                    <button onClick={handleFetchJobs} disabled={fetching} className="px-4 py-2.5 bg-[#115d9a] hover:bg-[#0e4d82] text-white rounded-xl text-sm font-bold shadow-md disabled:opacity-50 flex items-center gap-2 transition-all">
+                        {fetching ? <Loader2 className="w-4 h-4 animate-spin" /> : '🚀'}
+                        {fetching ? 'جاري البحث...' : 'تحديث الوظائف المطابقة'}
+                    </button>
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
                     {/* Sidebar */}

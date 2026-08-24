@@ -19,18 +19,7 @@ export default async function EmployerDashboard() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900" dir="rtl">
-            {/* Navbar */}
-            <nav className="fixed w-full z-50 bg-white border-b border-gray-100 shadow-sm h-20 flex items-center">
-                <div className="container mx-auto px-6 flex items-center justify-between">
-                    <Link href="/" className="text-2xl font-black text-blue-900">مسار</Link>
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm font-bold text-slate-600">شركة التقنية المتطورة</span>
-                        <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">T</div>
-                    </div>
-                </div>
-            </nav>
-
-            <div className="pt-32 pb-20 container mx-auto px-6">
+            <div className="py-8 pb-20 container mx-auto px-6">
                 <div className="flex justify-between items-center mb-8">
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 mb-2">لوحة التحكم</h1>

@@ -176,7 +176,7 @@ export default function PostTalentPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#0f172a] font-sans relative overflow-hidden flex items-center justify-center py-24 px-4 pt-32" dir="rtl">
+        <div className="min-h-screen bg-[#0f172a] font-sans relative overflow-hidden flex items-center justify-center py-10 px-4" dir="rtl">
 
             {/* خلفية جمالية متحركة */}
             <div className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none">

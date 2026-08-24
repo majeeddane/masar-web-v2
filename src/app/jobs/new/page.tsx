@@ -91,7 +91,7 @@ export default function NewJobPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] pt-28 pb-12 px-4" dir="rtl">
+        <div className="min-h-screen bg-[#f8fafc] pt-8 pb-12 px-4" dir="rtl">
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white shadow-2xl rounded-[3rem] overflow-hidden border border-slate-100">
                     <div className="bg-[#115d9a] h-3 w-full"></div>

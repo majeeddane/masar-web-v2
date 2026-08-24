@@ -90,20 +90,7 @@ export default async function SeekerDashboard() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-20 font-sans" dir="rtl">
-            {/* Navbar */}
-            <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
-                <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-                    <Link href="/" className="text-2xl font-black text-blue-900">مسار</Link>
-                    <div className="flex items-center gap-4">
-                        <span className="text-slate-500 text-sm font-bold hidden md:block">مرحباً، {user?.user_metadata?.name || 'باحث عن عمل'}</span>
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold">
-                            {(user?.user_metadata?.name?.[0] || 'U').toUpperCase()}
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
-            <div className="container mx-auto px-6 py-10">
+            <div className="container mx-auto px-6 py-8">
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">

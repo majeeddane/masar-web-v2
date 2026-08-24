@@ -3,7 +3,7 @@ import { Briefcase, User, ArrowRight, Sparkles, FileText } from 'lucide-react';
 
 export default function PostSelectionPage() {
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans text-slate-900 pt-28 pb-16" dir="rtl">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans text-slate-900 pt-8 pb-16" dir="rtl">
             <div className="max-w-4xl w-full">
 
                 <div className="text-center mb-12">

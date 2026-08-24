@@ -42,7 +42,7 @@ export default function ArticlePage() {
     }, [id]);
 
     if (loading) return (
-        <div className="min-h-screen bg-gray-50 pt-24">
+        <div className="min-h-screen bg-gray-50 pt-8">
             <div className="flex h-[80vh] items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#115d9a]"></div>
             </div>
@@ -50,7 +50,7 @@ export default function ArticlePage() {
     );
 
     if (!post) return (
-        <div className="min-h-screen bg-gray-50 pt-24">
+        <div className="min-h-screen bg-gray-50 pt-8">
             <div className="flex flex-col h-[80vh] items-center justify-center text-center px-4">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">المقال غير موجود</h1>
                 <Link href="/news" className="text-[#115d9a] hover:underline">العودة للأخبار</Link>
@@ -59,7 +59,7 @@ export default function ArticlePage() {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans pt-20" dir="rtl">
+        <div className="min-h-screen bg-gray-50 font-sans" dir="rtl">
 
             {/* Breadcrumb */}
             <div className="bg-white border-b border-gray-200">

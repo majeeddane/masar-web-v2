@@ -50,7 +50,7 @@ export default async function LandingPage() {
         {/* Subtle Navy Gradient Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-teal-50/30 opacity-70"></div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 relative z-10 flex flex-col items-center text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 relative z-10 flex flex-col items-center text-center">
           <div className="bg-blue-50 text-[#115d9a] px-4 py-1.5 rounded-full text-sm font-bold mb-8 border border-blue-100 inline-flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-700 shadow-sm">
             <Star className="h-4 w-4 fill-[#115d9a] text-[#115d9a]" />
             منصة التوظيف الأذكى في المملكة

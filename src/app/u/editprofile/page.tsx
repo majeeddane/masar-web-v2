@@ -6,15 +6,11 @@ import Link from 'next/link';
 export default function EditProfilePage() {
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20" dir="rtl">
-            {/* Simple Nav */}
-            <nav className="bg-white border-b border-slate-200 px-6 py-4 mb-8">
-                <div className="container mx-auto flex items-center justify-between">
-                    <h1 className="font-bold text-xl text-slate-800">تعديل الملف الشخصي</h1>
-                    <Link href="/u" className="text-sm font-bold text-slate-500 hover:text-blue-600">إلغاء</Link>
+            <div className="container mx-auto px-6 max-w-4xl py-8">
+                <div className="flex items-center justify-between mb-8">
+                    <h1 className="font-black text-2xl text-slate-800">تعديل الملف الشخصي</h1>
+                    <Link href="/u" className="text-sm font-bold text-slate-500 hover:text-blue-600 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm transition-all">إلغاء</Link>
                 </div>
-            </nav>
-
-            <div className="container mx-auto px-6 max-w-4xl">
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
 
                     <div className="p-8 border-b border-slate-100 flex items-center gap-6">

@@ -26,7 +26,7 @@ export default function RootLayout({
       <body className={font.className}>
         <AuthProvider>
           <Navbar />
-          <main className="min-h-screen">
+          <main className="min-h-screen pt-[54px] md:pt-[70px] lg:pt-[80px]">
             {children}
           </main>
           <Footer />

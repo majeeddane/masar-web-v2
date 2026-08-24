@@ -39,7 +39,7 @@ export default function BlogPage() {
     const categories = ['All', 'General', 'Career Tips', 'Market News', 'Success Stories'];
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans pt-24" dir="rtl">
+        <div className="min-h-screen bg-gray-50 font-sans" dir="rtl">
 
             {/* Hero Section */}
             <div className="bg-[#115d9a] text-white py-16 px-4 relative overflow-hidden">

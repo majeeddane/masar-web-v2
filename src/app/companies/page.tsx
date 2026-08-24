@@ -37,8 +37,7 @@ export default function FeaturedCompaniesPage() {
     );
 
     return (
-        /* ✅ إضافة pt-28 لضمان عدم تغطية الهيدر للنص */
-        <div className="min-h-screen bg-[#f8fafb] font-sans pt-28 pb-20" dir="rtl">
+        <div className="min-h-screen bg-[#f8fafb] font-sans pt-8 pb-20" dir="rtl">
 
             {/* Hero Section - تصميم ملكي داكن */}
             <div className="max-w-7xl mx-auto px-4 mb-16">

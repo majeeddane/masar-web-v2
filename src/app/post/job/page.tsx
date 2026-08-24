@@ -179,7 +179,7 @@ export default function PostJobPage() {
 
     // 4. Form State
     return (
-        <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-6 font-sans text-slate-900 pt-28" dir="rtl">
+        <div className="min-h-screen bg-slate-50 py-12 px-4 md:px-6 font-sans text-slate-900 pt-8" dir="rtl">
             <div className="max-w-4xl mx-auto">
 
                 <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-500 hover:text-[#115d9a] font-bold mb-6 transition-colors">
