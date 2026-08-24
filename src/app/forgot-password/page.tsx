@@ -18,8 +18,8 @@ export default function ForgotPasswordPage() {
         setError(null);
         setSuccess(false);
 
-        // Allow overriding via env var (standard Vercel practice), otherwise ensure production URL as fallback
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://masar-web-v2.vercel.app';
+        // Use current origin so the redirect always matches the actual domain
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
         const redirectUrl = `${siteUrl}/auth/callback?next=/update-password`;
 
 
