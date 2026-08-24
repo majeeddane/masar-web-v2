@@ -70,62 +70,90 @@ export default function PostJobPage() {
         }
 
         try {
+            // First try via Server API endpoint (uses server session & handles all table schema tiers)
+            const response = await fetch('/api/jobs/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                setSuccess(true);
+                return;
+            }
+
+            // If API returned a specific auth error
+            if (response.status === 401) {
+                setIsAuthenticated(false);
+                setErrorMsg('يجب تسجيل الدخول لنشر وظيفة.');
+                return;
+            }
+
+            // Fallback to direct client-side insertion if API route returned error
+            console.warn('API route failed, trying direct browser client insert...', result.error);
             const { data: { user } } = await supabase.auth.getUser();
 
             if (!user) {
                 setErrorMsg('يجب تسجيل الدخول لنشر وظيفة.');
                 setIsAuthenticated(false);
-                setLoading(false);
                 return;
             }
 
-            // 1. Base standard payload
+            const cleanTitle = formData.title.trim();
+            const cleanCompany = formData.company.trim();
+            const cleanCategory = formData.category.trim();
+            const cleanCity = formData.city.trim();
+            const cleanDescription = formData.description.trim();
+            const cleanPhone = formData.phone_number.trim() || null;
+            const cleanEmail = formData.contact_email.trim() || null;
+            const cleanLink = formData.application_link.trim() || null;
+            const numSalaryMin = formData.salary_min ? Number(formData.salary_min) : null;
+            const numSalaryMax = formData.salary_max ? Number(formData.salary_max) : null;
+
+            // Base standard payload
             const basePayload: any = {
-                title: formData.title.trim(),
-                company: formData.company.trim(),
-                category: formData.category,
-                city: formData.city,
-                location: formData.city,
-                description: formData.description.trim(),
+                title: cleanTitle,
+                company: cleanCompany,
+                category: cleanCategory,
+                city: cleanCity,
+                location: cleanCity,
+                description: cleanDescription,
                 job_type: formData.job_type || 'Full-time',
                 experience_level: formData.experience_level || 'Entry Level',
-                salary_min: formData.salary_min ? Number(formData.salary_min) : null,
-                salary_max: formData.salary_max ? Number(formData.salary_max) : null,
-                phone_number: formData.phone_number.trim() || null,
-                contact_email: formData.contact_email.trim() || null,
-                application_link: formData.application_link.trim() || null,
+                salary_min: numSalaryMin,
+                salary_max: numSalaryMax,
+                phone_number: cleanPhone,
+                contact_email: cleanEmail,
+                application_link: cleanLink,
                 is_active: true,
                 user_id: user.id
             };
 
-            // 2. Try inserting full schema with compatibility aliases
             let { error: insertError } = await supabase.from('jobs').insert({
                 ...basePayload,
-                company_name: formData.company.trim(),
-                contact_phone: formData.phone_number.trim() || null,
-                source_url: formData.application_link.trim() || null,
+                company_name: cleanCompany,
+                contact_phone: cleanPhone,
+                source_url: cleanLink,
                 created_by: user.id
             });
 
-            // 3. Fallback level 1: if extended columns (company_name, created_by, etc.) don't exist
-            if (insertError && (insertError.message?.includes('column') || insertError.code === '42703' || insertError.code === 'PGRST204')) {
-                console.warn('Retrying job insert with standard base schema...', insertError.message);
+            if (insertError) {
                 const retry1 = await supabase.from('jobs').insert(basePayload);
                 insertError = retry1.error;
             }
 
-            // 4. Fallback level 2: if optional fields like job_type/salary columns don't exist in older table
-            if (insertError && (insertError.message?.includes('column') || insertError.code === '42703' || insertError.code === 'PGRST204')) {
-                console.warn('Retrying job insert with core minimal schema...', insertError.message);
+            if (insertError) {
                 const minimalPayload = {
-                    title: formData.title.trim(),
-                    company: formData.company.trim(),
-                    category: formData.category,
-                    location: formData.city,
-                    description: formData.description.trim(),
-                    phone_number: formData.phone_number.trim() || null,
-                    contact_email: formData.contact_email.trim() || null,
-                    application_link: formData.application_link.trim() || null,
+                    title: cleanTitle,
+                    company: cleanCompany,
+                    category: cleanCategory,
+                    location: cleanCity,
+                    description: cleanDescription,
+                    phone_number: cleanPhone,
+                    contact_email: cleanEmail,
+                    application_link: cleanLink,
                     is_active: true,
                     user_id: user.id
                 };
@@ -134,8 +162,7 @@ export default function PostJobPage() {
             }
 
             if (insertError) {
-                console.error('Insert error in jobs table:', insertError);
-                throw insertError;
+                throw new Error(result.error || insertError.message || 'فشل حفظ الوظيفة في قاعدة البيانات');
             }
 
             setSuccess(true);

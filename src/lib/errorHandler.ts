@@ -86,6 +86,15 @@ export function getArabicErrorMessage(error: any): string {
         return 'حجم الملف كبير جداً. الحد الأقصى المسموح به هو 5 ميجابايت.';
     }
 
+    // 5. تفاصيل الخطأ المباشر من قاعدة البيانات
+    if (error?.message && error.message !== 'null' && error.message !== '[object Object]') {
+        return `خطأ: ${error.message}`;
+    }
+
+    if (rawMessage && rawMessage.length > 3 && rawMessage.length < 250 && !rawMessage.includes('{}')) {
+        return `خطأ أثناء تنفيذ الطلب: ${rawMessage}`;
+    }
+
     // إذا لم يتطابق أي نمط سابق، إرجاع رسالة عربية واضحة
-    return 'حدث خطأ أثناء تنفيذ الطلب. يرجى المحاولة لاحقاً أو مراجعة البيانات المدخلة.';
+    return 'حدث خطأ أثناء تنفيذ الطلب. يرجى التأكد من ملء جميع الحقول المطلوبة والمحاولة مرة أخرى.';
 }
