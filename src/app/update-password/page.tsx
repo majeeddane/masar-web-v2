@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -14,9 +14,51 @@ export default function UpdatePasswordPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [sessionReady, setSessionReady] = useState(false);
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    // Read tokens from URL hash (Supabase implicit flow sends them here)
+    useEffect(() => {
+        const hash = window.location.hash;
+        if (hash) {
+            const params = new URLSearchParams(hash.replace('#', ''));
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+
+            if (accessToken && refreshToken) {
+                supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+                    .then(({ error }) => {
+                        if (error) {
+                            setError('انتهت صلاحية الرابط. يرجى طلب إعادة تعيين كلمة المرور مرة أخرى.');
+                        } else {
+                            setSessionReady(true);
+                            // Clean the hash from URL without reloading
+                            window.history.replaceState(null, '', window.location.pathname);
+                        }
+                    });
+            } else {
+                // No tokens in hash — check if already logged in via existing session
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                    if (session) {
+                        setSessionReady(true);
+                    } else {
+                        setError('انتهت صلاحية الرابط. يرجى طلب إعادة تعيين كلمة المرور مرة أخرى.');
+                    }
+                });
+            }
+        } else {
+            // No hash — check if already logged in
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                if (session) {
+                    setSessionReady(true);
+                } else {
+                    setError('انتهت صلاحية الرابط. يرجى طلب إعادة تعيين كلمة المرور مرة أخرى.');
+                }
+            });
+        }
+    }, []);
 
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -18,9 +18,11 @@ export default function ForgotPasswordPage() {
         setError(null);
         setSuccess(false);
 
-        // Use current origin so the redirect always matches the actual domain
+        // Use current origin so the redirect always matches the actual domain.
+        // With implicit flow, Supabase sends tokens directly in the URL hash
+        // to this page, which reads them to establish a session.
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-        const redirectUrl = `${siteUrl}/auth/callback?next=/update-password`;
+        const redirectUrl = `${siteUrl}/update-password`;
 
 
 
