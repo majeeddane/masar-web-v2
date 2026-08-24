@@ -153,7 +153,7 @@ export default function PostDetailsPage() {
                             )}
 
                             {/* 2. زر الشات */}
-                            <Link href="/messages" className="w-full py-4 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                            <Link href={`/messages?user_id=${post.user_id}&talent_id=${post.id}&title=${encodeURIComponent(post.title || post.profiles?.full_name || 'ملف باحث عن عمل')}&type=talent`} className="w-full py-4 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                                 <MessageSquare className="w-5 h-5" /> محادثة عبر الموقع
                             </Link>
 

@@ -3,18 +3,27 @@ import { useState, useEffect, useRef } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 import {
     Send, ArrowRight, Loader2, MoreVertical,
-    Paperclip, Mic, Image as ImageIcon, Video, X
+    Paperclip, Mic, Image as ImageIcon, Video, X,
+    Briefcase, User, ExternalLink, Sparkles
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import imageCompression from 'browser-image-compression';
 import Link from 'next/link';
 
+export interface AdContext {
+    id?: string;
+    title?: string;
+    type?: 'job' | 'talent' | string;
+    url?: string;
+}
+
 interface ChatInterfaceProps {
     currentUserId: string;
     contactId: string;
+    adContext?: AdContext;
 }
 
-export default function ChatInterface({ currentUserId, contactId }: ChatInterfaceProps) {
+export default function ChatInterface({ currentUserId, contactId, adContext }: ChatInterfaceProps) {
     const supabase = getSupabaseBrowserClient();
     const router = useRouter();
 
@@ -23,6 +32,7 @@ export default function ChatInterface({ currentUserId, contactId }: ChatInterfac
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
+    const [showAdBanner, setShowAdBanner] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -246,6 +256,12 @@ export default function ChatInterface({ currentUserId, contactId }: ChatInterfac
 
     if (!contact) return <div className="flex h-full items-center justify-center">خطأ في تحميل المحادثة</div>;
 
+    const handleQuickAdMessage = () => {
+        if (!adContext?.title) return;
+        const msg = `السلام عليكم، أتواصل معك بخصوص إعلانكم: "${adContext.title}" المنشور على منصة مسار.`;
+        setNewMessage(msg);
+    };
+
     return (
         <div className="flex flex-col h-full bg-[#e5e7eb]">
             {/* Header */}
@@ -258,6 +274,7 @@ export default function ChatInterface({ currentUserId, contactId }: ChatInterfac
                         <img
                             src={contact.avatar_url || 'https://via.placeholder.com/150'}
                             className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                            alt=""
                         />
                         <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
                     </div>
@@ -271,9 +288,85 @@ export default function ChatInterface({ currentUserId, contactId }: ChatInterfac
                 </button>
             </div>
 
+            {/* Pinned Ad Context Banner (if arrived from an ad) */}
+            {adContext && showAdBanner && (
+                <div className="bg-gradient-to-r from-blue-900 to-[#115d9a] text-white px-4 py-3 shadow-md flex items-center justify-between gap-3 shrink-0 border-b border-blue-800 animate-in slide-in-from-top-1 duration-200">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/15">
+                            {adContext.type === 'job' ? (
+                                <Briefcase className="w-4 h-4 text-emerald-300" />
+                            ) : (
+                                <User className="w-4 h-4 text-purple-300" />
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${adContext.type === 'job' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'bg-purple-500/20 text-purple-300 border border-purple-400/30'}`}>
+                                    {adContext.type === 'job' ? 'إعلان وظيفة' : 'ملف كفاءة'}
+                                </span>
+                                <span className="text-xs text-blue-200 font-medium">محادثة مرتبطة بالإعلان:</span>
+                            </div>
+                            <h3 className="text-sm font-bold text-white truncate max-w-xs md:max-w-md mt-0.5">
+                                {adContext.title || 'إعلان مسار'}
+                            </h3>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        {adContext.url && (
+                            <Link
+                                href={adContext.url}
+                                target="_blank"
+                                className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg border border-white/20 transition-all"
+                            >
+                                <ExternalLink className="w-3.5 h-3.5" /> عرض الإعلان
+                            </Link>
+                        )}
+                        <button
+                            onClick={handleQuickAdMessage}
+                            className="text-xs font-bold text-[#115d9a] bg-white hover:bg-blue-50 px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5"
+                        >
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                            <span className="hidden xs:inline">استفسار سريع</span>
+                        </button>
+                        <button
+                            onClick={() => setShowAdBanner(false)}
+                            className="text-white/60 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+                            title="إغلاق الشعار"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed">
-                {messages.map(renderMessage)}
+                {messages.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center p-6 text-center">
+                        <div className="max-w-md bg-white rounded-3xl p-6 shadow-sm border border-gray-200">
+                            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#115d9a] flex items-center justify-center mx-auto mb-3">
+                                {adContext?.type === 'job' ? <Briefcase className="w-7 h-7" /> : <User className="w-7 h-7" />}
+                            </div>
+                            <h3 className="font-bold text-gray-800 text-base mb-1">
+                                {adContext ? `بدء المحادثة بخصوص "${adContext.title}"` : `بدء محادثة جديدة مع ${contact.full_name || 'المستخدم'}`}
+                            </h3>
+                            <p className="text-xs text-gray-500 mb-4">
+                                يمكنك كتابة استفسارك أو الضغط أدناه لتجهيز رسالة تلقائية بخصوص هذا الإعلان.
+                            </p>
+                            {adContext?.title && (
+                                <button
+                                    onClick={handleQuickAdMessage}
+                                    className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-50 to-emerald-50 text-[#115d9a] font-bold text-xs rounded-xl border border-blue-100 hover:border-blue-300 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                                    <span>تجهيز رسالة الاستفسار عن الإعلان</span>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    messages.map(renderMessage)
+                )}
                 <div ref={messagesEndRef} />
             </div>
 

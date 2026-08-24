@@ -28,7 +28,7 @@ export default function JobActions({ jobId, ownerId, phone, email, currentUser }
     };
 
     const handleChatClick = () => {
-        router.push(`/messages?to=${ownerId}&job=${jobId}`);
+        router.push(`/messages?user_id=${ownerId}&job_id=${jobId}&type=job`);
     };
 
     return (

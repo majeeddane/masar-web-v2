@@ -70,7 +70,7 @@ export default function JobDetailsPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Link href={`/messages?userId=${job.user_id}&refJob=${job.id}&title=${encodeURIComponent(job.title)}`} className="flex items-center justify-center gap-3 bg-purple-50 text-purple-700 py-4 rounded-2xl font-black border border-purple-100 hover:bg-purple-100 transition-all shadow-sm">
+                            <Link href={`/messages?user_id=${job.user_id}&job_id=${job.id}&title=${encodeURIComponent(job.title)}&type=job`} className="flex items-center justify-center gap-3 bg-purple-50 text-purple-700 py-4 rounded-2xl font-black border border-purple-100 hover:bg-purple-100 transition-all shadow-sm">
                                 <MessageSquare className="w-6 h-6" /> محادثة عبر الموقع
                             </Link>
 

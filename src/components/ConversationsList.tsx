@@ -71,9 +71,47 @@ export default function ConversationsList() {
           }
         }
 
-        setContacts(Object.values(contactMap).sort((a, b) =>
-          new Date(b.last_msg.created_at).getTime() - new Date(a.last_msg.created_at).getTime()
-        ));
+        // If an active contact is in URL but has no prior messages, fetch their profile and add to list
+        if (activeUserId && !contactMap[activeUserId]) {
+          const { data: activeProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', activeUserId)
+            .single();
+
+          if (activeProfile) {
+            contactMap[activeUserId] = {
+              id: activeUserId,
+              ...activeProfile,
+              last_msg: null,
+              unread_count: 0,
+              is_new: true
+            };
+          }
+        }
+
+        setContacts(Object.values(contactMap).sort((a, b) => {
+          if (!a.last_msg) return -1;
+          if (!b.last_msg) return 1;
+          return new Date(b.last_msg.created_at).getTime() - new Date(a.last_msg.created_at).getTime();
+        }));
+      } else if (activeUserId) {
+        // No messages at all yet in account, but we have an active contact
+        const { data: activeProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', activeUserId)
+          .single();
+
+        if (activeProfile) {
+          setContacts([{
+            id: activeUserId,
+            ...activeProfile,
+            last_msg: null,
+            unread_count: 0,
+            is_new: true
+          }]);
+        }
       }
       setLoading(false);
     };
@@ -177,12 +215,18 @@ export default function ConversationsList() {
                 <div className="flex justify-between items-center mb-1">
                   <h3 className={`font-bold text-sm truncate ${activeUserId === contact.id ? 'text-[#115d9a]' : 'text-gray-900'}`}>{contact.full_name || 'مستخدم مسار'}</h3>
                   <span className="text-[10px] text-gray-400 font-medium">
-                    {new Date(contact.last_msg.created_at).toLocaleDateString('ar-SA')}
+                    {contact.last_msg ? new Date(contact.last_msg.created_at).toLocaleDateString('ar-SA') : 'جديد'}
                   </span>
                 </div>
                 <p className={`text-xs truncate ${contact.unread_count > 0 ? 'font-bold text-gray-800' : 'text-gray-500'}`}>
-                  {contact.last_msg.sender_id === user?.id && <span className="mr-1">أنت:</span>}
-                  {getMessagePreview(contact.last_msg)}
+                  {contact.last_msg ? (
+                    <>
+                      {contact.last_msg.sender_id === user?.id && <span className="mr-1">أنت:</span>}
+                      {getMessagePreview(contact.last_msg)}
+                    </>
+                  ) : (
+                    <span className="text-[#115d9a] font-bold">محادثة جديدة ✨</span>
+                  )}
                 </p>
               </div>
             </div>
