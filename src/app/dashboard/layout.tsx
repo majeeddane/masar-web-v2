@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Briefcase, User, LayoutDashboard, MessageCircle, FileText } from 'lucide-react';
+import { Briefcase, User, LayoutDashboard, MessageCircle, FileText, Layers } from 'lucide-react';
 import LogoutButton from '@/components/LogoutButton';
 
 export default async function DashboardLayout({
@@ -46,7 +46,7 @@ export default async function DashboardLayout({
                         <LayoutDashboard className="w-5 h-5" /> لوحة التحكم
                     </Link>
                     <Link href="/my-jobs" className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#115d9a] rounded-xl font-medium transition-all">
-                        <FileText className="w-5 h-5" /> وظائفي
+                        <Layers className="w-5 h-5" /> إعلاناتي
                     </Link>
                     <Link href="/messages" className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-[#115d9a] rounded-xl font-medium transition-all">
                         <MessageCircle className="w-5 h-5" /> الرسائل

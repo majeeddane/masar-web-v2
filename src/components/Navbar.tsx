@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 import Image from 'next/image';
-import { Bell, MessageSquare, Briefcase, User, Menu, X, Building2, BookOpen, LayoutDashboard, FileText, Home } from 'lucide-react';
+import { Bell, MessageSquare, Briefcase, User, Menu, X, Building2, BookOpen, LayoutDashboard, FileText, Home, Layers } from 'lucide-react';
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -51,7 +51,7 @@ export default function Navbar() {
         { name: 'الباحثين عن عمل', href: '/talents', icon: User },
         { name: 'مركز المعرفة', href: '/news', icon: BookOpen },
         { name: 'لوحة التحكم', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'وظائفي', href: '/dashboard/my-jobs', icon: FileText },
+        { name: 'إعلاناتي', href: '/dashboard/my-jobs', icon: Layers },
     ];
 
     return (
