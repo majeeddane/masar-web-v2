@@ -30,7 +30,7 @@ export default async function LandingPage() {
   // 2. Fetch Latest Jobs (Limit 4)
   const { data: latestJobs } = await supabase
     .from('jobs')
-    .select('*, profiles(full_name, avatar_url)')
+    .select('*')
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(4);
@@ -133,7 +133,7 @@ export default async function LandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {latestJobs && latestJobs.length > 0 ? (
             latestJobs.map((job) => (
-              <Link href={`/jobs/${job.id}`} key={job.id} className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-blue-100 transition-all duration-300 block">
+              <Link href={`/jobs/view/${job.id}`} key={job.id} className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-blue-100 transition-all duration-300 block">
                 <div className="flex items-start justify-between mb-4">
                   <div className="bg-blue-50 w-12 h-12 rounded-xl flex items-center justify-center text-[#115d9a] font-bold text-lg group-hover:bg-[#115d9a] group-hover:text-white transition-colors">
                     {job.company?.[0] || 'م'}

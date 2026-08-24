@@ -27,23 +27,40 @@ export default function JobCategoryFeed() {
 
         const fetchJobs = async () => {
             setLoading(true);
-            const { data, error } = await supabase
-                .from('jobs')
-                .select(`*, profiles:user_id (full_name, avatar_url, city)`)
-                .or(`category.ilike.%${categoryName}%,title.ilike.%${categoryName}%`)
-                .order('created_at', { ascending: false });
+            try {
+                const { data, error } = await supabase
+                    .from('jobs')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-            if (!error) {
-                setJobs(data || []);
+                if (error) {
+                    console.error('Error fetching jobs:', error);
+                }
+
+                if (data) {
+                    const target = categoryName.trim().toLowerCase();
+                    const matched = data.filter(job => {
+                        const jCat = (job.category || '').trim().toLowerCase();
+                        const jTitle = (job.title || '').trim().toLowerCase();
+                        return jCat.includes(target) || target.includes(jCat) || jTitle.includes(target);
+                    });
+                    setJobs(matched);
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
 
         if (categoryName) fetchJobs();
     }, [categoryName, supabase]);
 
     const filteredJobs = jobs.filter(job => {
-        const matchesSearch = job.title?.toLowerCase().includes(search.toLowerCase());
+        const matchesSearch = !search.trim() ||
+            (job.title && job.title.toLowerCase().includes(search.toLowerCase())) ||
+            (job.company && job.company.toLowerCase().includes(search.toLowerCase())) ||
+            (job.company_name && job.company_name.toLowerCase().includes(search.toLowerCase()));
         const matchesCity = selectedCity === '' || job.city === selectedCity || job.location === selectedCity;
         return matchesSearch && matchesCity;
     });
@@ -130,12 +147,16 @@ export default function JobCategoryFeed() {
                                 className="group bg-white rounded-[2.5rem] p-7 border border-slate-100 shadow-sm hover:shadow-2xl hover:border-emerald-200 transition-all duration-500 flex flex-col h-full animate-in fade-in zoom-in-95"
                             >
                                 <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center">
-                                        {job.profiles?.avatar_url ? <img src={job.profiles.avatar_url} className="w-full h-full object-cover" alt="" /> : <Building2 className="w-7 h-7 text-slate-300" />}
+                                    <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 overflow-hidden flex items-center justify-center text-[#115d9a]">
+                                        <Building2 className="w-7 h-7" />
                                     </div>
-                                    <div>
-                                        <span className="block text-sm font-black text-slate-900 truncate">{job.profiles?.full_name}</span>
-                                        <span className="text-[11px] text-slate-400 font-bold flex items-center gap-1 mt-0.5"><Clock className="w-3.5 h-3.5" /> {new Date(job.created_at).toLocaleDateString('ar-SA')}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <span className="block text-sm font-black text-slate-900 truncate">
+                                            {job.company || job.company_name || 'جهة غير محددة'}
+                                        </span>
+                                        <span className="text-[11px] text-slate-400 font-bold flex items-center gap-1 mt-0.5">
+                                            <Clock className="w-3.5 h-3.5" /> {new Date(job.created_at).toLocaleDateString('ar-SA')}
+                                        </span>
                                     </div>
                                 </div>
                                 <h3 className="text-xl font-black text-slate-800 mb-4 line-clamp-2 leading-snug">{job.title}</h3>

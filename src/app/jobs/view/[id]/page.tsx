@@ -23,11 +23,15 @@ export default function JobDetailsPage() {
         const fetchJob = async () => {
             const { data, error } = await supabase
                 .from('jobs')
-                .select(`*, profiles:user_id (full_name, avatar_url)`)
+                .select('*')
                 .eq('id', params.id)
                 .single();
 
-            if (!error) setJob(data);
+            if (!error && data) {
+                setJob(data);
+            } else if (error) {
+                console.error('Error fetching job details:', error);
+            }
             setLoading(false);
         };
         if (params.id) fetchJob();

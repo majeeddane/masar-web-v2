@@ -43,11 +43,12 @@ export default function JobsCategoriesPage() {
                 const newCounts: { [key: string]: number } = {};
 
                 CATEGORIES.forEach(cat => {
-                    // ✅ توحيد منطق العد مع منطق العرض (البحث الجزئي)
-                    const count = data.filter(job =>
-                        (job.category && job.category.includes(cat.name)) ||
-                        (job.title && job.title.includes(cat.name))
-                    ).length;
+                    const target = cat.name.trim().toLowerCase();
+                    const count = data.filter(job => {
+                        const jCat = (job.category || '').trim().toLowerCase();
+                        const jTitle = (job.title || '').trim().toLowerCase();
+                        return jCat.includes(target) || target.includes(jCat) || jTitle.includes(target);
+                    }).length;
                     newCounts[cat.name] = count;
                 });
                 setCounts(newCounts);
