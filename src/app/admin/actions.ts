@@ -2,10 +2,11 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { jobAggregator } from '@/services/jobAggregator.service';
 
 // --- Configuration ---
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xyz.supabase.co';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5eiIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MjAwMDAwMDAwMH0.placeholder'; // Must use Service Role for Admin delete/update if RLS is on
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 
 // Helper: Get Admin Client
@@ -15,8 +16,6 @@ const getAdminClient = () => createClient(supabaseUrl, serviceRoleKey);
 export async function verifyAdminPassword(password: string) {
     if (password === ADMIN_PASSWORD) {
         const cookieStore = await cookies();
-        // Set a simple cookie for "session" (Not production grade, but fits "quick solution")
-        // In a real app, use JWT or proper Auth.
         cookieStore.set('admin_session', 'authenticated', { httpOnly: true, secure: true });
         return { success: true };
     }
@@ -45,42 +44,48 @@ export async function updateJob(id: string, updates: any) {
     return { success: true };
 }
 
-// 5. Trigger Scraper
-export async function triggerScraper() {
-    // This is better called from Client via fetch to reuse the API logic, 
-    // but can be direct here. Let's return the API URL and Key for client to call 
-    // OR call it directly here.
-    // Given the prompt asks to "Call the API /api/scrape", let's do it from Client 
-    // to utilize the existing route logic (and show progress).
-
-    // We'll just provide the secret to the client safely? No, that exposes it.
-    // Better: The Client calls this action, and this action calls the API locally or executes logic.
-    // Actually, user explicitly asked: "Button ... calls my API /api/scrape ... send Bearer Token".
-    // I should probably do this client-side for the visual feedback, but I need the token.
-    // I'll create a Server Action proxy that calls the API so the token stays server-side.
-
+// 5. Trigger Real Job Sync with AI
+export async function triggerJobSync(limitPerSource: number = 10, source: 'all' | 'saudi' | 'jobicy' | 'arbeitnow' | 'remotive' = 'all') {
     try {
-        const secret = process.env.CRON_SECRET;
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/scrape`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${secret}`
-            }
-        });
-        const data = await response.json();
-        return { success: true, data };
+        console.log(`⚡ [Admin Action] تشغيل مزامنة الوظائف (المصدر: ${source}, الحد: ${limitPerSource})...`);
+        const report = await jobAggregator.runSync({ limitPerSource, source });
+        return { success: true, report };
     } catch (e: any) {
-        return { success: false, error: e.message };
+        console.error('❌ خطأ في تشغيل المزامنة:', e);
+        return { success: false, error: e.message || 'فشلت المزامنة' };
     }
 }
 
-// 6. Get Applications
+// 6. Purge Mock / Test Jobs
+export async function purgeMockJobs() {
+    try {
+        console.log('🧹 [Admin Action] تنظيف الوظائف التجريبية...');
+        const result = await jobAggregator.purgeMockJobs();
+        return { success: true, result };
+    } catch (e: any) {
+        console.error('❌ خطأ في تنظيف الوظائف التجريبية:', e);
+        return { success: false, error: e.message || 'فشل التنظيف' };
+    }
+}
+
+// 7. Purge All Jobs (Clean Slate)
+export async function purgeAllJobs() {
+    try {
+        console.log('🗑️ [Admin Action] تنظيف جدول الوظائف بالكامل...');
+        const result = await jobAggregator.purgeAllJobs();
+        return { success: true, result };
+    } catch (e: any) {
+        console.error('❌ خطأ في مسح الوظائف:', e);
+        return { success: false, error: e.message || 'فشل المسح' };
+    }
+}
+
+// 8. Get Applications
 export async function getApplications() {
     const supabase = getAdminClient();
 
-    // Join with jobs table to get job title
     const { data, error } = await supabase
-        .from('job_applications')
+        .from('applications')
         .select(`
             *,
             jobs (
@@ -91,6 +96,6 @@ export async function getApplications() {
 
     if (error) throw new Error(error.message);
 
-    // Transform to flatten structure if needed, or keeping as is
     return { success: true, data };
 }
+

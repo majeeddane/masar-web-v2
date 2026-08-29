@@ -61,7 +61,7 @@ export default function JobCategoryFeed() {
             (job.title && job.title.toLowerCase().includes(search.toLowerCase())) ||
             (job.company && job.company.toLowerCase().includes(search.toLowerCase())) ||
             (job.company_name && job.company_name.toLowerCase().includes(search.toLowerCase()));
-        const matchesCity = selectedCity === '' || job.city === selectedCity || job.location === selectedCity;
+        const matchesCity = !selectedCity || selectedCity === 'الكل' || job.city === selectedCity || (job.location && job.location.includes(selectedCity)) || (job.city && job.city.includes(selectedCity));
         return matchesSearch && matchesCity;
     });
 

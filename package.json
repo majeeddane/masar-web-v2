@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync:jobs": "tsx src/scripts/sync-real-jobs.ts",
+    "purge:jobs": "tsx src/scripts/purge-mock-jobs.ts",
+    "seed:saudi": "tsx src/scripts/seed-saudi-jobs.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

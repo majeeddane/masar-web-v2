@@ -4,9 +4,11 @@ import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import {
     LayoutDashboard, Users, Briefcase, FileCheck, CheckCircle2, XCircle, Trash2, Search, ShieldCheck,
-    Activity, Loader2, Ban, UserCheck, Eye, MapPin, Building2, Calendar, Newspaper, Plus, Edit, Save, Image as ImageIcon, X, Sparkles
+    Activity, Loader2, Ban, UserCheck, Eye, MapPin, Building2, Calendar, Newspaper, Plus, Edit, Save, Image as ImageIcon, X, Sparkles,
+    RefreshCw, Zap, RotateCcw, AlertTriangle, ExternalLink, Check
 } from 'lucide-react';
 import Link from 'next/link';
+import { triggerJobSync, purgeMockJobs, purgeAllJobs } from './actions';
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -47,6 +49,13 @@ export default function AdminDashboard() {
     });
     const [formLoading, setFormLoading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // Job Aggregator & AI Sync State
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isPurging, setIsPurging] = useState(false);
+    const [syncLimit, setSyncLimit] = useState(10);
+    const [syncSource, setSyncSource] = useState<'all' | 'jobicy' | 'arbeitnow' | 'remotive'>('all');
+    const [syncReport, setSyncReport] = useState<any>(null);
 
     useEffect(() => {
         checkAdminAccess();
@@ -191,6 +200,70 @@ export default function AdminDashboard() {
             setJobs(jobs.filter(j => j.id !== jobId));
             setStats(prev => ({ ...prev, activeJobs: prev.activeJobs - 1 }));
             showToast('تم حذف الوظيفة بنجاح');
+        }
+    };
+
+    // Trigger AI Real Job Sync
+    const handleTriggerSync = async () => {
+        setIsSyncing(true);
+        setSyncReport(null);
+        showToast('🚀 بدء سحب ومعالجة الوظائف الحقيقية بالذكاء الاصطناعي...', 'success');
+
+        try {
+            const res = await triggerJobSync(syncLimit, syncSource);
+            if (res.success && res.report) {
+                setSyncReport(res.report);
+                showToast(`✅ تمت إضافة ${res.report.successfullyInserted} وظيفة حقيقية بنجاح!`, 'success');
+                // تحديث القائمة والإحصائيات
+                fetchAdminData();
+            } else {
+                showToast(res.error || 'فشلت المزامنة', 'error');
+            }
+        } catch (err: any) {
+            console.error('Sync error:', err);
+            showToast(`فشلت المزامنة: ${err.message}`, 'error');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    // Purge Mock / Test Jobs
+    const handlePurgeMockJobs = async () => {
+        if (!confirm('هل أنت متأكد من حذف كافة الوظائف التجريبية والوهمية من الموقع؟')) return;
+
+        setIsPurging(true);
+        try {
+            const res = await purgeMockJobs();
+            if (res.success && res.result) {
+                showToast(res.result.message, 'success');
+                fetchAdminData();
+            } else {
+                showToast(res.error || 'فشل تنظيف الوظائف التجريبية', 'error');
+            }
+        } catch (err: any) {
+            showToast(`خطأ أثناء التنظيف: ${err.message}`, 'error');
+        } finally {
+            setIsPurging(false);
+        }
+    };
+
+    // Purge All Jobs (Clean slate)
+    const handlePurgeAllJobs = async () => {
+        if (!confirm('⚠️ تحذير: سيتم مسح كافة الوظائف الحالية بالكامل! هل ترغب في المتابعة؟')) return;
+
+        setIsPurging(true);
+        try {
+            const res = await purgeAllJobs();
+            if (res.success && res.result) {
+                showToast(res.result.message, 'success');
+                fetchAdminData();
+            } else {
+                showToast(res.error || 'فشل مسح الوظائف', 'error');
+            }
+        } catch (err: any) {
+            showToast(`خطأ: ${err.message}`, 'error');
+        } finally {
+            setIsPurging(false);
         }
     };
 
@@ -575,55 +648,181 @@ export default function AdminDashboard() {
 
                     {/* JOBS TAB */}
                     {activeTab === 'jobs' && (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-right">
-                                <thead className="bg-black/20 text-gray-500 text-xs uppercase font-bold tracking-wider">
-                                    <tr>
-                                        <th className="px-6 py-4">عنوان الوظيفة</th>
-                                        <th className="px-6 py-4">تفاصيل</th>
-                                        <th className="px-6 py-4">الموقع</th>
-                                        <th className="px-6 py-4">الناشر</th>
-                                        <th className="px-6 py-4">تاريخ النشر</th>
-                                        <th className="px-6 py-4">تحكم</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-800">
-                                    {filteredData.map((job: any) => (
-                                        <tr key={job.id} className="hover:bg-white/5 transition-colors group">
-                                            <td className="px-6 py-4 font-bold text-white">
-                                                {job.title}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="bg-gray-800 text-gray-300 px-2 py-1 rounded text-xs border border-gray-700">
-                                                    {job.category}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-400 flex items-center gap-1">
-                                                <MapPin className="h-3 w-3" /> {job.city}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-300">
-                                                {job.profiles?.full_name}
-                                            </td>
-                                            <td className="px-6 py-4 text-xs text-gray-500 font-numeric">
-                                                {new Date(job.created_at).toLocaleDateString()}
-                                            </td>
-                                            <td className="px-6 py-4 flex gap-2">
-                                                <Link href={`/jobs/${job.id}`} target="_blank" className="p-2 bg-gray-800 rounded-lg text-blue-400 hover:bg-gray-700">
-                                                    <Eye className="h-4 w-4" />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDeleteJob(job.id)}
-                                                    className="p-2 bg-red-500/10 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </td>
+                        <div className="space-y-6">
+                            {/* AI Job Aggregator & Real Sync Control Box */}
+                            <div className="bg-gradient-to-r from-gray-900 via-[#0a231c] to-gray-900 border border-emerald-500/30 rounded-2xl p-6 shadow-xl">
+                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                                <Zap className="h-5 w-5" />
+                                            </span>
+                                            <h3 className="text-xl font-black text-white">محرك سحب ومعالجة الوظائف الحقيقية (AI Hub)</h3>
+                                        </div>
+                                        <p className="text-sm text-gray-400 max-w-2xl leading-relaxed">
+                                            يقوم النظام بسحب الوظائف الحقيقية المحدثة من كبرى بوابات التوظيف (Jobicy, Arbeitnow, Remotive)، وتتم ترجمتها وإعادة صياغتها وتنظيم متطلباتها وتصنيفها بالذكاء الاصطناعي (Gemini Flash) يومياً بشكل تلقائي.
+                                        </p>
+                                    </div>
+
+                                    {/* Action Buttons & Source Selectors */}
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <div className="flex items-center gap-2 bg-black/40 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-300">
+                                            <span>المصدر:</span>
+                                            <select
+                                                value={syncSource}
+                                                onChange={(e: any) => setSyncSource(e.target.value)}
+                                                className="bg-transparent text-white font-bold focus:outline-none cursor-pointer"
+                                                disabled={isSyncing}
+                                            >
+                                                <option value="saudi" className="bg-gray-900 text-emerald-400 font-bold">🇸🇦 وظائف المملكة العربية السعودية (الرياض، جدة، الشرقية...)</option>
+                                                <option value="all" className="bg-gray-900 text-white">كافة المصادر (السعودية + الدولية)</option>
+                                                <option value="jobicy" className="bg-gray-900 text-white">Jobicy API</option>
+                                                <option value="arbeitnow" className="bg-gray-900 text-white">Arbeitnow API</option>
+                                                <option value="remotive" className="bg-gray-900 text-white">Remotive API</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 bg-black/40 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-300">
+                                            <span>العدد:</span>
+                                            <select
+                                                value={syncLimit}
+                                                onChange={(e) => setSyncLimit(Number(e.target.value))}
+                                                className="bg-transparent text-white font-bold focus:outline-none cursor-pointer"
+                                                disabled={isSyncing}
+                                            >
+                                                <option value={5} className="bg-gray-900 text-white">5 وظائف</option>
+                                                <option value={10} className="bg-gray-900 text-white">10 وظائف</option>
+                                                <option value={20} className="bg-gray-900 text-white">20 وظيفة</option>
+                                                <option value={30} className="bg-gray-900 text-white">30 وظيفة</option>
+                                            </select>
+                                        </div>
+
+                                        <button
+                                            onClick={handleTriggerSync}
+                                            disabled={isSyncing || isPurging}
+                                            className="px-5 py-3 rounded-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
+                                        >
+                                            {isSyncing ? (
+                                                <>
+                                                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                                                    <span>جارِ السحب والمعالجة الذكية...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="h-4 w-4 text-emerald-200" />
+                                                    <span>سحب الوظائف بالذكاء الاصطناعي الآن</span>
+                                                </>
+                                            )}
+                                        </button>
+
+                                        <button
+                                            onClick={handlePurgeMockJobs}
+                                            disabled={isSyncing || isPurging}
+                                            className="px-4 py-3 rounded-xl font-bold bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 flex items-center gap-2 transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
+                                            title="حذف البيانات الوهمية والتجريبية فقط"
+                                        >
+                                            {isPurging ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                                            <span>🧹 حذف الوظائف التجريبية</span>
+                                        </button>
+
+                                        <button
+                                            onClick={handlePurgeAllJobs}
+                                            disabled={isSyncing || isPurging}
+                                            className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-all disabled:opacity-50 cursor-pointer"
+                                            title="تفريغ جدول الوظائف بالكامل (Clean Slate)"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Sync Results Box */}
+                                {syncReport && (
+                                    <div className="mt-5 p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 text-sm animate-in fade-in">
+                                        <div className="font-bold flex items-center gap-2 mb-2 text-emerald-300">
+                                            <CheckCircle2 className="h-4 w-4" /> تقرير عملية المزامنة الذكية الأخيرة:
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                            <div className="bg-black/30 p-2.5 rounded-lg border border-emerald-500/20">
+                                                <div className="text-gray-400">إجمالي المسحوب:</div>
+                                                <div className="text-base font-bold text-white mt-1">{syncReport.totalFetched} وظيفة</div>
+                                            </div>
+                                            <div className="bg-black/30 p-2.5 rounded-lg border border-emerald-500/20">
+                                                <div className="text-gray-400">مكررة تم تخطيها:</div>
+                                                <div className="text-base font-bold text-yellow-400 mt-1">{syncReport.alreadyExisted}</div>
+                                            </div>
+                                            <div className="bg-black/30 p-2.5 rounded-lg border border-emerald-500/20">
+                                                <div className="text-gray-400">عولجت بالذكاء الاصطناعي:</div>
+                                                <div className="text-base font-bold text-teal-300 mt-1">{syncReport.newJobsProcessed}</div>
+                                            </div>
+                                            <div className="bg-black/30 p-2.5 rounded-lg border border-emerald-500/20">
+                                                <div className="text-gray-400">أُضيفت للموقع بنجاح:</div>
+                                                <div className="text-base font-bold text-emerald-400 mt-1">{syncReport.successfullyInserted}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* JOBS TABLE */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-right">
+                                    <thead className="bg-black/20 text-gray-500 text-xs uppercase font-bold tracking-wider">
+                                        <tr>
+                                            <th className="px-6 py-4">عنوان الوظيفة</th>
+                                            <th className="px-6 py-4">القسم والتصنيف</th>
+                                            <th className="px-6 py-4">الموقع</th>
+                                            <th className="px-6 py-4">الشركة / المصدر</th>
+                                            <th className="px-6 py-4">تاريخ النشر</th>
+                                            <th className="px-6 py-4">تحكم</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-800">
+                                        {filteredData.map((job: any) => (
+                                            <tr key={job.id} className="hover:bg-white/5 transition-colors group">
+                                                <td className="px-6 py-4">
+                                                    <div className="font-bold text-white line-clamp-1">{job.title}</div>
+                                                    {job.application_link && (
+                                                        <a href={job.application_link} target="_blank" className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1 mt-0.5">
+                                                            <ExternalLink className="h-3 w-3" /> تقديم خارجي
+                                                        </a>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-bold border border-emerald-500/20">
+                                                        {job.category || 'عام'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-400">
+                                                    <span className="flex items-center gap-1">
+                                                        <MapPin className="h-3 w-3 text-gray-500" /> {job.city || job.location || 'عن بعد'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-300 font-bold">
+                                                    {job.company_name || job.company || job.profiles?.full_name || 'شركة معتمدة'}
+                                                </td>
+                                                <td className="px-6 py-4 text-xs text-gray-500 font-numeric">
+                                                    {new Date(job.created_at).toLocaleDateString('ar-SA')}
+                                                </td>
+                                                <td className="px-6 py-4 flex gap-2">
+                                                    <Link href={`/jobs/view/${job.id}`} target="_blank" className="p-2 bg-gray-800 rounded-lg text-blue-400 hover:bg-gray-700">
+                                                        <Eye className="h-4 w-4" />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDeleteJob(job.id)}
+                                                        className="p-2 bg-red-500/10 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
+
 
                     {/* APPLICATIONS TAB */}
                     {activeTab === 'applications' && (

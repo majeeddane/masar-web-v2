@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 import Link from 'next/link';
-import { Plus, Search, Building2 } from 'lucide-react';
+import { Plus, Search, Building2, MapPin } from 'lucide-react';
 
 const CATEGORIES = [
     { name: 'سياحة ومطاعم', emoji: '🍽️' }, { name: 'مهندس', emoji: '👷‍♂️' },
@@ -26,22 +26,23 @@ const CATEGORIES = [
     { name: 'محاماة وقانون', emoji: '⚖️' }, { name: 'مونتاج وإخراج', emoji: '🎬' },
     { name: 'تصميم مواقع', emoji: '🌐' }, { name: 'علاقات عامة', emoji: '📣' },
     { name: 'مترجمين', emoji: '🗣️' }, { name: 'محررين', emoji: '✍️' },
+    { name: 'سياحة وفنادق', emoji: '🏨' },
 ];
 
 export default function JobsCategoriesPage() {
     const [mounted, setMounted] = useState(false);
     const [counts, setCounts] = useState<{ [key: string]: number }>({});
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState<'category' | 'city'>('category');
 
     const supabase = getSupabaseBrowserClient();
 
     useEffect(() => {
         setMounted(true);
         const fetchCounts = async () => {
-            const { data } = await supabase.from('jobs').select('category, title');
+            const { data } = await supabase.from('jobs').select('category, title').eq('is_active', true);
             if (data) {
                 const newCounts: { [key: string]: number } = {};
-
                 CATEGORIES.forEach(cat => {
                     const target = cat.name.trim().toLowerCase();
                     const count = data.filter(job => {
@@ -63,16 +64,36 @@ export default function JobsCategoriesPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-20" dir="rtl">
-            <div className="relative bg-[#022c22] text-white pt-8 pb-32 overflow-hidden rounded-b-[4rem] border-b-8 border-emerald-500">
+            <div className="relative bg-gradient-to-br from-[#022c22] via-[#04452e] to-[#022c22] text-white pt-10 pb-36 overflow-hidden rounded-b-[4rem] border-b-8 border-emerald-500">
                 <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
-                    <h1 className="text-5xl md:text-7xl font-black mb-6">فرصك الوظيفية <span className="text-emerald-400">تبدأ هنا</span></h1>
+                    <h1 className="text-5xl md:text-7xl font-black mb-4">
+                        فرصك الوظيفية <span className="text-emerald-400">تبدأ هنا</span>
+                    </h1>
+                    <p className="text-emerald-200 text-lg mb-8">ابحث عن وظيفتك في أي مدينة سعودية أو تخصص تريده</p>
+
+                    {/* Tabs */}
+                    <div className="flex justify-center gap-3 mb-6">
+                        <button
+                            onClick={() => setActiveTab('category')}
+                            className={`px-6 py-2.5 rounded-2xl font-black text-sm transition-all ${activeTab === 'category' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}
+                        >
+                            🗂️ حسب التخصص
+                        </button>
+                        <Link
+                            href="/jobs/cities"
+                            className="px-6 py-2.5 rounded-2xl font-black text-sm transition-all bg-white/10 text-white/70 hover:bg-white/20 flex items-center gap-2"
+                        >
+                            <MapPin className="w-4 h-4" /> حسب المدينة
+                        </Link>
+                    </div>
+
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto bg-white/5 p-2 rounded-3xl border border-white/10 backdrop-blur-sm">
                         <input
                             type="text" placeholder="ابحث عن تخصص..." value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full py-4 px-6 rounded-2xl bg-white text-slate-800 focus:outline-none font-bold shadow-inner"
                         />
-                        <Link href="/post/job" className="w-full sm:w-auto py-4 px-8 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black shadow-lg transition-all">
+                        <Link href="/post/job" className="w-full sm:w-auto py-4 px-8 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black shadow-lg transition-all whitespace-nowrap">
                             + أضف وظيفة
                         </Link>
                     </div>
